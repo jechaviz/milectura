@@ -1,8 +1,8 @@
 <template>
-	<div class="space-y-5">
-		<!-- Book / chapter picker -->
-		<section class="glass rounded-3xl p-4 sm:p-5">
-			<div class="flex flex-wrap items-center gap-3">
+	<div class="lg:grid lg:grid-cols-[19rem_1fr] lg:gap-6 lg:items-start space-y-5 lg:space-y-0">
+		<!-- Book / chapter picker (sticky sidebar on desktop) -->
+		<section class="glass rounded-3xl p-4 sm:p-5 lg:sticky lg:top-24">
+			<div class="flex flex-wrap items-center gap-3 lg:flex-col lg:items-stretch">
 				<select :value="book" @change="selectBook(+$event.target.value)"
 					class="glass-soft rounded-full px-4 py-2 outline-none cursor-pointer flex-1 min-w-[10rem]">
 					<option v-for="b in books" :key="b.n" :value="b.n" class="text-ink">{{ b.name }}</option>
@@ -13,7 +13,7 @@
 					<button class="w-8 h-8 rounded-full hover:bg-white/15" @click="go(1)">›</button>
 				</div>
 			</div>
-			<div v-if="books.length" class="mt-3 flex gap-1 flex-wrap max-h-24 overflow-y-auto">
+			<div v-if="books.length" class="mt-3 flex gap-1 flex-wrap max-h-24 lg:max-h-64 overflow-y-auto">
 				<button v-for="c in maxChapter" :key="c" @click="loadChapter(book, c)"
 					class="w-8 h-8 rounded-lg text-sm transition"
 					:class="c === chapter ? 'bg-gold text-ink-900 font-semibold' : 'glass-soft hover:bg-white/15'">{{ c }}</button>
@@ -21,7 +21,7 @@
 		</section>
 
 		<!-- Chapter text -->
-		<section class="glass rounded-3xl p-6 sm:p-9">
+		<section class="glass rounded-3xl p-6 sm:p-9 lg:p-11">
 			<div v-if="err" class="text-white/60">{{ err }}</div>
 			<div v-else-if="!data" class="space-y-2">
 				<div class="h-4 bg-white/5 rounded animate-pulse" v-for="i in 8" :key="i" :style="{ width: (60 + (i*4)%38) + '%' }"></div>
@@ -32,7 +32,7 @@
 					<div class="flex-1"></div>
 					<button class="chip" @click="toggleCommentary">{{ showComm ? 'Ocultar notas' : '✦ Notas' }}</button>
 				</div>
-				<VerseBlock :verses="data.verses" :subheadings="data.subheadings" class="font-serif text-[1.15em] text-white/90" />
+				<VerseBlock :verses="data.verses" :subheadings="data.subheadings" class="font-serif text-[1.15em] lg:text-[1.2em] leading-relaxed text-white/90 max-w-[46rem]" />
 
 				<!-- Commentary -->
 				<div v-if="showComm" class="mt-8 pt-6 border-t border-white/10">

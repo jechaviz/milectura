@@ -3,9 +3,9 @@
 		<!-- Hero: verse of the day -->
 		<section class="glass rounded-3xl overflow-hidden relative">
 			<div class="absolute inset-0 -z-10 opacity-40 bg-cover bg-center" :style="heroBg"></div>
-			<div class="p-7 sm:p-10">
+			<div class="p-7 sm:p-10 lg:p-14 lg:max-w-4xl">
 				<p class="text-xs tracking-[0.25em] text-gold-soft/80 uppercase mb-3">Versículo de hoy · {{ prettyDate }}</p>
-				<div v-if="votd" class="font-serif text-2xl sm:text-3xl leading-snug text-white">
+				<div v-if="votd" class="font-serif text-2xl sm:text-3xl lg:text-4xl leading-snug text-white">
 					<VerseBlock :verses="votd.verses" memorizable />
 				</div>
 				<div v-else-if="err" class="text-white/60">{{ err }}</div>
@@ -35,15 +35,15 @@
 			<div v-else-if="!plan" class="space-y-2">
 				<div class="h-4 bg-white/5 rounded animate-pulse" v-for="i in 4" :key="i"></div>
 			</div>
-			<div v-else class="space-y-6">
+			<div v-else class="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-x-10 lg:gap-y-6">
 				<div v-for="grp in planGroups" :key="grp.key">
-					<div class="flex items-center gap-2 mb-2">
+					<div class="flex items-center gap-2 mb-2 sticky top-16 md:top-20 py-1 -mx-1 px-1 backdrop-blur-sm">
 						<span class="text-xs px-2 py-0.5 rounded-full glass-soft text-gold-soft">{{ grp.tag }}</span>
-						<span class="text-white/50 text-sm">{{ grp.items.map(i => i.ref).join(' · ') }}</span>
+						<span class="text-white/50 text-sm truncate">{{ grp.items.map(i => i.ref).join(' · ') }}</span>
 					</div>
 					<div v-for="p in grp.items" :key="p.ref" class="mb-4">
 						<h3 class="font-serif text-lg text-white/90 mb-1">{{ p.ref }}</h3>
-						<VerseBlock :verses="p.verses" :subheadings="p.subheadings" class="text-white/85" />
+						<VerseBlock :verses="p.verses" :subheadings="p.subheadings" class="text-white/85 max-w-prose" />
 					</div>
 				</div>
 			</div>

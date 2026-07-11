@@ -44,10 +44,18 @@
 		}
 	}
 
-	function nextStage(key) {
-		const i = STAGES.findIndex((s) => s.key === key);
-		return STAGES[(i + 1) % STAGES.length].key;
+	// nextStage cycles normal -> [enabled forms in canonical order] -> normal.
+	// `enabled` is the user's chosen set (store.memStages); when omitted, all.
+	function nextStage(key, enabled) {
+		const forms = (enabled && enabled.length ? enabled : ['initials', 'hidden', 'blur']);
+		const cycle = ['normal', ...STAGES.filter((s) => forms.includes(s.key)).map((s) => s.key)];
+		const i = cycle.indexOf(key);
+		return cycle[(i + 1) % cycle.length];
 	}
 
-	window.mlMem = { STAGES, apply, nextStage, initials, hidden };
+	function stageInfo(key) {
+		return STAGES.find((s) => s.key === key) || STAGES[0];
+	}
+
+	window.mlMem = { STAGES, apply, nextStage, stageInfo, initials, hidden };
 })();

@@ -61,11 +61,23 @@ const store = Vue.reactive({
 	bibles: [],
 	fontScale: Number(localStorage.getItem('ml_font') || 1),
 	forgetica: localStorage.getItem('ml_forgetica') === '1',
+	// which memorization forms the click-cycle steps through (user-selectable).
+	memStages: JSON.parse(localStorage.getItem('ml_memstages') || '["initials","hidden","blur"]'),
 	favorites: JSON.parse(localStorage.getItem('ml_favs') || '[]'),
 	date: todayISO(),
 	setVersion(v) { this.version = v; localStorage.setItem('ml_version', v); },
 	setFont(v) { this.fontScale = Math.min(1.8, Math.max(0.8, v)); localStorage.setItem('ml_font', this.fontScale); },
 	toggleForgetica() { this.forgetica = !this.forgetica; localStorage.setItem('ml_forgetica', this.forgetica ? '1' : '0'); },
+	toggleMemStage(key) {
+		const i = this.memStages.indexOf(key);
+		if (i >= 0) { if (this.memStages.length > 1) this.memStages.splice(i, 1); }
+		else {
+			// keep canonical difficulty order
+			const order = ['initials', 'hidden', 'blur'];
+			this.memStages = order.filter((k) => k === key || this.memStages.includes(k));
+		}
+		localStorage.setItem('ml_memstages', JSON.stringify(this.memStages));
+	},
 	toggleFav(item) {
 		const key = item.ref;
 		const i = this.favorites.findIndex((f) => f.ref === key);

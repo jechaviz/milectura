@@ -11,7 +11,7 @@
 			<span class="text-sm font-sans text-white/40">Toca ♡ en cualquier versículo para atesorarlo aquí.</span>
 		</section>
 
-		<section v-else class="grid sm:grid-cols-2 gap-4">
+		<section v-else class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
 			<div v-for="f in store.favorites" :key="f.ref + f.savedAt" class="glass rounded-3xl p-5 flex flex-col">
 				<div class="flex items-center gap-2 mb-2">
 					<a :href="'#/leer?b='+(f.book||'')+'&c='+(f.chapter||'')" class="text-gold-soft font-medium no-underline hover:underline">{{ f.ref }}</a>

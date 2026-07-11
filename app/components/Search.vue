@@ -19,7 +19,7 @@
 			<p class="text-white/50 text-sm mb-4">
 				{{ results.length }} resultado(s){{ more ? '+' : '' }} para “{{ lastQ }}”
 			</p>
-			<div class="space-y-3">
+			<div class="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3">
 				<div v-for="(r,i) in results" :key="i" class="glass-soft rounded-2xl p-4 hover:bg-white/12 transition group">
 					<div class="flex items-center gap-2 mb-1">
 						<a :href="'#/leer?b='+r.book+'&c='+r.chapter" class="text-gold-soft font-medium no-underline hover:underline">{{ r.ref }}</a>

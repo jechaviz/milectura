@@ -16,6 +16,7 @@
 
 <script>
 module.exports = {
+	inject: { store: { default: null } },
 	props: {
 		verses: { type: Array, default: () => [] },
 		subheadings: { type: Object, default: () => ({}) },
@@ -39,7 +40,8 @@ module.exports = {
 	methods: {
 		onClick() {
 			if (!this.memorizable || this.forceStage) return;
-			this.stage = window.mlMem ? window.mlMem.nextStage(this.stage) : 'normal';
+			const enabled = this.store ? this.store.memStages : null;
+			this.stage = window.mlMem ? window.mlMem.nextStage(this.stage, enabled) : 'normal';
 		},
 	},
 };

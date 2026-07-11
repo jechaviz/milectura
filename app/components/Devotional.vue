@@ -10,13 +10,13 @@
 			<p v-if="name" class="text-white/50 text-sm mt-1">{{ name }}</p>
 		</section>
 
-		<section class="glass rounded-3xl p-6 sm:p-9">
+		<section class="glass rounded-3xl p-6 sm:p-9 lg:p-12">
 			<div v-if="err" class="text-white/60">{{ err }}</div>
 			<div v-else-if="!html" class="space-y-2">
 				<div class="h-5 bg-white/5 rounded animate-pulse w-1/2"></div>
 				<div class="h-4 bg-white/5 rounded animate-pulse" v-for="i in 6" :key="i"></div>
 			</div>
-			<div v-else class="devo" v-html="html"></div>
+			<div v-else class="devo mx-auto max-w-3xl" v-html="html"></div>
 		</section>
 	</div>
 </template>

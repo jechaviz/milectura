@@ -14,12 +14,23 @@
 			</div>
 		</section>
 
-		<!-- Stage control -->
-		<section class="glass-soft rounded-2xl p-3 flex items-center gap-2 flex-wrap text-sm">
-			<span class="text-white/50 px-1">Modo:</span>
-			<button class="chip" :class="mode === 'libre' ? '!bg-white/20 text-gold-soft' : ''" @click="mode='libre'">👆 Libre (toca el texto)</button>
-			<button v-for="st in stages" :key="st.key" class="chip"
-				:class="mode === st.key ? '!bg-white/20 text-gold-soft' : ''" @click="mode = st.key">{{ st.label }}</button>
+		<!-- Choose which memorization FORMS to use (persisted globally) -->
+		<section class="glass-soft rounded-2xl p-3 sm:p-4 space-y-3">
+			<div class="flex items-center gap-2 flex-wrap text-sm">
+				<span class="text-white/50 px-1">Formas:</span>
+				<button v-for="st in allStages" :key="st.key" class="chip"
+					:class="store.memStages.includes(st.key) ? '!bg-white/20 text-gold-soft' : 'opacity-50'"
+					@click="store.toggleMemStage(st.key)">
+					<span>{{ store.memStages.includes(st.key) ? '✓' : '' }}</span> {{ st.label }}
+				</button>
+				<span class="text-white/30 text-xs hidden sm:inline">— elige cómo se esconde el texto</span>
+			</div>
+			<div class="flex items-center gap-2 flex-wrap text-sm border-t border-white/10 pt-3">
+				<span class="text-white/50 px-1">Modo:</span>
+				<button class="chip" :class="mode === 'libre' ? '!bg-white/20 text-gold-soft' : ''" @click="mode='libre'">👆 Libre (toca el texto)</button>
+				<button v-for="st in enabledStages" :key="st.key" class="chip"
+					:class="mode === st.key ? '!bg-white/20 text-gold-soft' : ''" @click="mode = st.key">{{ st.label }}</button>
+			</div>
 		</section>
 
 		<!-- Card -->
@@ -88,14 +99,16 @@ module.exports = {
 				{ key: 'favoritos', label: '❤ Mis guardados' },
 				{ key: 'hoy', label: '📅 Versículo de hoy' },
 			],
-			stages: (window.mlMem && window.mlMem.STAGES ? window.mlMem.STAGES.filter((s) => s.key !== 'normal') : []),
+			allStages: (window.mlMem && window.mlMem.STAGES ? window.mlMem.STAGES.filter((s) => s.key !== 'normal') : []),
 		};
 	},
 	computed: {
 		current() { return this.deck[this.idx] || { ref: '', verses: [] }; },
+		enabledStages() { return this.allStages.filter((s) => this.store.memStages.includes(s.key)); },
 	},
 	watch: {
 		'store.version'() { this.load(); },
+		'store.memStages'() { if (this.mode !== 'libre' && !this.store.memStages.includes(this.mode)) this.mode = 'libre'; },
 	},
 	methods: {
 		setSource(k) { this.source = k; this.idx = 0; this.load(); },
