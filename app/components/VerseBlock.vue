@@ -44,7 +44,8 @@ module.exports = {
 				const s = window.mlMem ? window.mlMem.stageInfo(this.stage) : { label: '', hint: '' };
 				return { label: s.label, hint: this.stage === 'normal' ? 'Toca para esconder' : 'Toca para la siguiente forma' };
 			}
-			if (!this.active) return { label: 'Lectura', hint: 'Toca el versículo para memorizarlo' };
+			const one = this.verses.length <= 1;
+			if (!this.active) return { label: 'Lectura', hint: one ? 'Toca para memorizar' : 'Toca para memorizar este pasaje' };
 			if (this.gmode === 'blur') return { label: 'Difuminado', hint: 'Mantén sobre una palabra para revelarla · toca para leer' };
 			const s = window.mlMem ? window.mlMem.stageInfo(this.gmode) : { label: '', hint: '' };
 			return { label: s.label, hint: 'Toca para leer' };
