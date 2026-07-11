@@ -28,7 +28,7 @@
 							{{ store.isFav(r.ref) ? '❤' : '♡' }}
 						</button>
 					</div>
-					<p class="text-white/85 verse" :class="{ blurred: act[i] && store.memMode === 'blur', 'mem-on': store.memMode !== 'off' }"
+					<p class="text-white/85 verse mem-on" :class="{ blurred: isHidden(i) && store.memMode === 'blur' }"
 						v-html="displayT(r.t, i)" @click="toggleRes(i)"
 						@pointerdown="onDown" @pointermove="onPointer"
 						@pointerup="clearDwell" @pointercancel="clearDwell" @pointerleave="clearDwell"></p>
@@ -61,10 +61,11 @@ module.exports = {
 		},
 		// When a memorization form is active globally, apply it; otherwise keep the
 		// search highlight. (Memorization works in every view, search included.)
-		// per-result: only the tapped result is memorized (act[i]); others read normal.
+		// A result is memorized when the global toggle XOR its own tap.
+		isHidden(i) { return this.store.memAll !== !!this.act[i]; },
 		displayT(t, i) {
 			const m = this.store.memMode;
-			if (!this.act[i] || m === 'off' || m === 'libre' || !window.mlMem) return this.highlight(t);
+			if (!this.isHidden(i) || !window.mlMem) return this.highlight(t);
 			if (m === 'blur') return window.mlMem.blurWords(t);
 			return window.mlMem.apply(t, m);
 		},
@@ -73,10 +74,8 @@ module.exports = {
 			this.onPointer(e);
 		},
 		toggleRes(i) {
-			const m = this.store.memMode;
-			if (m === 'off' || m === 'libre') return;
 			const held = ((typeof performance !== 'undefined') ? performance.now() : 0) - (this._downAt || 0);
-			if (m === 'blur' && this.act[i] && held >= 220) return; // hold = reveal words
+			if (this.isHidden(i) && this.store.memMode === 'blur' && held >= 220) return; // hold = reveal words
 			this.act = { ...this.act, [i]: !this.act[i] };
 		},
 		onPointer(e) {

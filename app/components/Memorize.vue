@@ -12,23 +12,13 @@
 			</div>
 		</section>
 
-		<!-- Mode control (drives the GLOBAL memorization mode) -->
-		<section class="glass-soft rounded-2xl p-3 sm:p-4 space-y-3">
-			<div class="flex items-center gap-2 flex-wrap text-sm">
-				<span class="text-white/50 px-1">Modo:</span>
-				<button class="chip" :class="store.memMode === 'off' ? '!bg-white/20 text-gold-soft' : ''" @click="store.setMemMode('off')">📖 Completo</button>
-				<button class="chip" :class="store.memMode === 'libre' ? '!bg-white/20 text-gold-soft' : ''" @click="store.setMemMode('libre')">👆 Libre</button>
-				<button v-for="st in enabledStages" :key="st.key" class="chip"
-					:class="store.memMode === st.key ? '!bg-white/20 text-gold-soft' : ''" @click="store.setMemMode(st.key)">{{ st.label }}</button>
-			</div>
-			<div class="flex items-center gap-2 flex-wrap text-sm border-t border-white/10 pt-3">
-				<span class="text-white/50 px-1">Formas:</span>
-				<button v-for="st in allStages" :key="st.key" class="chip"
-					:class="store.memStages.includes(st.key) ? '!bg-white/20 text-gold-soft' : 'opacity-50'"
-					@click="store.toggleMemStage(st.key)">
-					<span>{{ store.memStages.includes(st.key) ? '✓' : '' }}</span> {{ st.label }}
-				</button>
-			</div>
+		<!-- Method selector (the global form) -->
+		<section class="glass-soft rounded-2xl p-3 sm:p-4 flex items-center gap-2 flex-wrap text-sm">
+			<span class="text-white/50 px-1">Método:</span>
+			<button v-for="m in forms" :key="m.key" class="chip"
+				:class="store.memMode === m.key ? '!bg-white/20 text-gold-soft' : ''" @click="store.setMemMode(m.key)">{{ m.label }}</button>
+			<div class="flex-1"></div>
+			<button class="chip" :class="store.forgetica ? '!bg-white/20 text-gold-soft' : ''" @click="store.toggleForgetica()">🧠 Sans Forgetica</button>
 		</section>
 
 		<!-- Card -->
@@ -45,13 +35,14 @@
 			</div>
 
 			<div class="flex-1 flex items-center">
-				<VerseBlock :key="current.ref + deckStage" :verses="current.verses" :forceStage="deckStage"
+				<VerseBlock :key="current.ref + revealed" :verses="current.verses"
+					:forceStage="revealed ? '' : store.memMode" :plain="revealed"
 					class="font-serif text-2xl sm:text-3xl leading-relaxed text-white w-full" />
 			</div>
 
 			<div class="mt-8 flex items-center gap-2 flex-wrap">
 				<button class="btn-ghost" @click="prev" :disabled="idx===0" :class="idx===0 ? 'opacity-40' : ''">‹ Anterior</button>
-				<button class="btn-gold" @click="store.setMemMode('off')">👁 Revelar</button>
+				<button class="btn-gold" @click="revealed = !revealed">{{ revealed ? '🙈 Esconder' : '👁 Revelar' }}</button>
 				<button class="btn-ghost" @click="fav(current)">{{ store.isFav(current.ref) ? '❤ Guardado' : '♡ Guardar' }}</button>
 				<div class="flex-1"></div>
 				<button class="btn-ghost" @click="next" :disabled="idx>=deck.length-1" :class="idx>=deck.length-1 ? 'opacity-40' : ''">Siguiente ›</button>
@@ -63,8 +54,8 @@
 			<p class="text-gold-soft font-medium">Las estrategias</p>
 			<p><b class="text-white/90">Iniciales</b> — cada palabra deja solo su primera letra.</p>
 			<p><b class="text-white/90">Oculto</b> — desaparecen todas las letras; queda la estructura.</p>
-			<p><b class="text-white/90">Difuminado</b> — el texto sigue ahí pero borroso; pasa el cursor para confirmar.</p>
-			<p class="text-white/40">El modo elegido aquí se aplica en toda la app (también desde el botón 🧠).</p>
+			<p><b class="text-white/90">Difuminado</b> — el texto sigue ahí pero borroso; mantén el cursor/dedo sobre una palabra para revelarla poco a poco.</p>
+			<p class="text-white/40">En cualquier vista, toca un pasaje para memorizarlo; el método se elige aquí o en 🧠.</p>
 		</section>
 	</div>
 </template>
@@ -85,6 +76,7 @@ module.exports = {
 			source: 'promesas',
 			deck: [],
 			idx: 0,
+			revealed: false,
 			err: '',
 			loading: false,
 			sources: [
@@ -92,26 +84,24 @@ module.exports = {
 				{ key: 'favoritos', label: '❤ Mis guardados' },
 				{ key: 'hoy', label: '📅 Versículo de hoy' },
 			],
-			allStages: (window.mlMem && window.mlMem.STAGES ? window.mlMem.STAGES.filter((s) => s.key !== 'normal') : []),
+			forms: [
+				{ key: 'initials', label: 'Iniciales' },
+				{ key: 'hidden', label: 'Oculto' },
+				{ key: 'blur', label: 'Difuminado' },
+			],
 		};
 	},
 	computed: {
 		current() { return this.deck[this.idx] || { ref: '', verses: [] }; },
-		enabledStages() { return this.allStages.filter((s) => this.store.memStages.includes(s.key)); },
-		// the deck card always shows the chosen form (hidden by default to practice);
-		// '' when off/libre so it reads normally or cycles on tap.
-		deckStage() {
-			const m = this.store.memMode;
-			return (m === 'initials' || m === 'hidden' || m === 'blur') ? m : '';
-		},
 	},
 	watch: {
 		'store.version'() { this.load(); },
+		idx() { this.revealed = false; },
 	},
 	methods: {
 		setSource(k) { this.source = k; this.idx = 0; this.load(); },
 		async load() {
-			this.err = ''; this.idx = 0; this.deck = []; this.loading = true;
+			this.err = ''; this.idx = 0; this.deck = []; this.revealed = false; this.loading = true;
 			try {
 				if (this.source === 'favoritos') {
 					this.deck = this.store.favorites.map((f) => ({ ref: f.ref, verses: f.verses }));
@@ -129,10 +119,6 @@ module.exports = {
 		prev() { if (this.idx > 0) this.idx--; },
 		fav(c) { if (c.ref) this.store.toggleFav({ ref: c.ref, verses: c.verses, version: this.store.version }); },
 	},
-	mounted() {
-		// entering the practice page starts interactive if memorization was off
-		if (this.store.memMode === 'off') this.store.setMemMode('libre');
-		this.load();
-	},
+	mounted() { this.load(); },
 };
 </script>

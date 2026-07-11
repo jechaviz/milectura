@@ -61,35 +61,21 @@ const store = Vue.reactive({
 	bibles: [],
 	fontScale: Number(localStorage.getItem('ml_font') || 1),
 	forgetica: localStorage.getItem('ml_forgetica') === '1',
-	// Memorization: memMode is the SELECTED form (or 'off' = reading only). A form
-	// no longer hides every verse at once — verses read normally and each one is
-	// memorized only when tapped/clicked (per-verse). 'libre' cycles per verse.
-	//   'off' | 'libre' | 'initials' | 'hidden' | 'blur'
-	memMode: localStorage.getItem('ml_memmode') || 'off',
-	memLastForm: localStorage.getItem('ml_memlast') || 'blur', // forma por defecto: difuminado
-	// which memorization forms the click-cycle steps through (user-selectable).
-	memStages: JSON.parse(localStorage.getItem('ml_memstages') || '["initials","hidden","blur"]'),
+	// Memorization method (form), always selectable; default 'blur'.
+	//   'initials' | 'hidden' | 'blur'
+	memMode: (function () { const m = localStorage.getItem('ml_memmode'); return (m === 'initials' || m === 'hidden' || m === 'blur') ? m : 'blur'; })(),
+	// Global "memorize all" toggle. A passage is hidden when memAll XOR (it was
+	// tapped). So reading is the default, tapping a passage memorizes just that
+	// set, and 🧠 hides/reveals everything at once.
+	memAll: localStorage.getItem('ml_memall') === '1',
 	favorites: JSON.parse(localStorage.getItem('ml_favs') || '[]'),
 	date: todayISO(),
 	setVersion(v) { this.version = v; localStorage.setItem('ml_version', v); },
 	setFont(v) { this.fontScale = Math.min(1.8, Math.max(0.8, v)); localStorage.setItem('ml_font', this.fontScale); },
 	toggleForgetica() { this.forgetica = !this.forgetica; localStorage.setItem('ml_forgetica', this.forgetica ? '1' : '0'); },
-	setMemMode(m) {
-		if (m !== 'off') { this.memLastForm = m; localStorage.setItem('ml_memlast', m); }
-		this.memMode = m; localStorage.setItem('ml_memmode', m);
-	},
-	// quick toggle: memorization on (last form) <-> reading only ('off')
-	toggleMem() { this.setMemMode(this.memMode === 'off' ? (this.memLastForm || 'blur') : 'off'); },
-	toggleMemStage(key) {
-		const i = this.memStages.indexOf(key);
-		if (i >= 0) { if (this.memStages.length > 1) this.memStages.splice(i, 1); }
-		else {
-			// keep canonical difficulty order
-			const order = ['initials', 'hidden', 'blur'];
-			this.memStages = order.filter((k) => k === key || this.memStages.includes(k));
-		}
-		localStorage.setItem('ml_memstages', JSON.stringify(this.memStages));
-	},
+	setMemMode(m) { this.memMode = m; localStorage.setItem('ml_memmode', m); },
+	// 🧠 quick toggle: memorize ALL passages <-> reveal all (reading).
+	toggleMemAll() { this.memAll = !this.memAll; localStorage.setItem('ml_memall', this.memAll ? '1' : '0'); },
 	toggleFav(item) {
 		const key = item.ref;
 		const i = this.favorites.findIndex((f) => f.ref === key);

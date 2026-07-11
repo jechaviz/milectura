@@ -3,15 +3,14 @@
 		@click="onClick" @pointerdown="onDown" @pointermove="onPointer"
 		@pointerup="clearDwell" @pointercancel="clearDwell" @pointerleave="clearDwell">
 		<div v-if="showBadge" class="mem-badge select-none flex items-center gap-2 mb-2 text-xs" @click.stop>
-			<span v-if="gmode === 'libre'" class="px-2 py-0.5 rounded-full glass-soft text-gold-soft">{{ badge.label }}</span>
-			<select v-else :value="gmode" @change="store && store.setMemMode($event.target.value)"
+			<select :value="form" @change="store && store.setMemMode($event.target.value)"
 				@click.stop @pointerdown.stop
 				class="glass-soft rounded-full px-2.5 py-0.5 text-gold-soft outline-none cursor-pointer">
 				<option value="initials" class="text-ink">Iniciales</option>
 				<option value="hidden" class="text-ink">Oculto</option>
 				<option value="blur" class="text-ink">Difuminado</option>
 			</select>
-			<span class="text-white/40">{{ badge.hint }}</span>
+			<span class="text-white/40">{{ hint }}</span>
 		</div>
 		<template v-for="v in display" :key="v.v">
 			<div v-if="subheadings && subheadings[v.v]"
@@ -29,33 +28,27 @@ module.exports = {
 		subheadings: { type: Object, default: () => ({}) },
 		// externally-controlled stage (the Memorizar deck forces its card hidden)
 		forceStage: { type: String, default: '' },
-		// never memorize (plain display) regardless of the global mode
+		// never memorize (plain display) regardless of the global state
 		plain: { type: Boolean, default: false },
 	},
-	data() { return { stage: 'normal', active: false }; },
+	data() { return { active: false }; },
 	computed: {
-		gmode() { return this.plain ? 'off' : (this.store ? this.store.memMode : 'off'); },
-		isForm() { return this.gmode === 'initials' || this.gmode === 'hidden' || this.gmode === 'blur'; },
-		// resolved stage to render for THIS verse block:
-		activeStage() {
-			if (this.forceStage) return this.forceStage;
-			if (this.gmode === 'off') return 'normal';
-			if (this.gmode === 'libre') return this.stage;
-			// form mode: normal until this verse is tapped to memorize it
-			return this.active ? this.gmode : 'normal';
+		form() { return this.store ? this.store.memMode : 'blur'; },
+		memAll() { return this.store ? this.store.memAll : false; },
+		// A passage is memorized when the global toggle XOR its own tap. So reading
+		// is default; tapping memorizes just this set; 🧠 flips everything at once.
+		hidden() {
+			if (this.plain) return false;
+			if (this.forceStage) return true;
+			return this.memAll !== this.active;
 		},
-		interactive() { return !this.forceStage && this.gmode !== 'off'; },
-		showBadge() { return this.interactive; },
-		badge() {
-			if (this.gmode === 'libre') {
-				const s = window.mlMem ? window.mlMem.stageInfo(this.stage) : { label: '', hint: '' };
-				return { label: s.label, hint: this.stage === 'normal' ? 'Toca para esconder' : 'Toca para la siguiente forma' };
-			}
-			const one = this.verses.length <= 1;
-			if (!this.active) return { label: 'Lectura', hint: one ? 'Toca para memorizar' : 'Toca para memorizar este pasaje' };
-			if (this.gmode === 'blur') return { label: 'Difuminado', hint: 'Mantén sobre una palabra para revelarla · toca para leer' };
-			const s = window.mlMem ? window.mlMem.stageInfo(this.gmode) : { label: '', hint: '' };
-			return { label: s.label, hint: 'Toca para leer' };
+		activeStage() { return this.forceStage ? this.forceStage : (this.hidden ? this.form : 'normal'); },
+		interactive() { return !this.forceStage && !this.plain; },
+		// The form select shows only once a passage is memorized (clean reading).
+		showBadge() { return this.interactive && this.hidden; },
+		hint() {
+			if (this.form === 'blur') return 'Mantén sobre una palabra para revelarla · toca para leer';
+			return 'Toca para leer';
 		},
 		display() {
 			const mem = window.mlMem;
@@ -66,7 +59,7 @@ module.exports = {
 		},
 	},
 	watch: {
-		gmode() { this.stage = 'normal'; this.active = false; },
+		memAll() { this.active = false; }, // reset local taps when the global flips
 	},
 	methods: {
 		onDown(e) {
@@ -74,19 +67,14 @@ module.exports = {
 			this.onPointer(e);
 		},
 		onClick() {
-			if (this.forceStage || this.gmode === 'off') return;
-			if (this.gmode === 'libre') {
-				const enabled = this.store ? this.store.memStages : null;
-				this.stage = window.mlMem ? window.mlMem.nextStage(this.stage, enabled) : 'normal';
-				return;
-			}
-			// form mode: a quick tap toggles THIS verse. A hold (used to reveal words
-			// in blur) must not toggle — distinguish by press duration.
+			if (!this.interactive) return;
+			// A quick tap toggles this passage's memorized state. A hold (used to
+			// reveal words in blur) must not toggle — distinguish by press duration.
 			const held = ((typeof performance !== 'undefined') ? performance.now() : 0) - (this._downAt || 0);
-			if (this.gmode === 'blur' && this.active && held >= 220) return;
+			if (this.activeStage === 'blur' && held >= 220) return;
 			this.active = !this.active;
 		},
-		// GRADUAL per-word reveal while the pointer dwells (blur, active verse only).
+		// GRADUAL per-word reveal while the pointer dwells (blurred passage only).
 		onPointer(e) {
 			if (this.activeStage !== 'blur') return;
 			const el = document.elementFromPoint(e.clientX, e.clientY);
