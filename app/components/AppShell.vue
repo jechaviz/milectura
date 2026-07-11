@@ -1,5 +1,5 @@
 <template>
-	<div class="min-h-screen font-sans text-white/90" :style="{ fontSize: (store.fontScale) + 'rem' }">
+	<div class="min-h-screen font-sans text-white/90" :class="{ forgetica: store.forgetica }" :style="{ fontSize: (store.fontScale) + 'rem' }">
 		<!-- Top bar -->
 		<header class="sticky top-0 z-50 glass border-x-0 border-t-0">
 			<div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
@@ -12,6 +12,9 @@
 					class="glass-soft rounded-full px-3 py-1.5 text-sm text-white/90 outline-none cursor-pointer">
 					<option v-for="b in store.bibles" :key="b.id" :value="b.id" class="text-ink">{{ b.id }}</option>
 				</select>
+				<button @click="store.toggleForgetica()" :title="store.forgetica ? 'Fuente normal' : 'Sans Forgetica (ayuda a memorizar)'"
+					class="w-9 h-9 rounded-full glass-soft leading-none transition"
+					:class="store.forgetica ? 'text-gold-soft bg-white/15' : 'text-white/60 hover:text-white'">🧠</button>
 				<div class="hidden sm:flex items-center gap-1 glass-soft rounded-full px-1.5 py-1">
 					<button @click="store.setFont(store.fontScale - 0.1)" class="w-7 h-7 rounded-full hover:bg-white/15 leading-none">A-</button>
 					<button @click="store.setFont(store.fontScale + 0.1)" class="w-7 h-7 rounded-full hover:bg-white/15 text-lg leading-none">A+</button>
@@ -28,7 +31,7 @@
 
 		<!-- Bottom tab nav -->
 		<nav class="fixed bottom-0 inset-x-0 z-50 glass border-x-0 border-b-0">
-			<div class="max-w-5xl mx-auto px-2 grid grid-cols-5 gap-1 py-1.5">
+			<div class="max-w-5xl mx-auto px-1 grid grid-cols-6 gap-0.5 py-1.5">
 				<a v-for="t in tabs" :key="t.hash" :href="'#' + t.hash"
 					class="flex flex-col items-center gap-0.5 py-1.5 rounded-2xl no-underline transition"
 					:class="isActive(t.hash) ? 'text-gold-soft bg-white/10' : 'text-white/55 hover:text-white/85'">
@@ -50,6 +53,7 @@ module.exports = {
 				{ hash: '/hoy', label: 'Hoy', icon: '✦' },
 				{ hash: '/leer', label: 'Leer', icon: '📖' },
 				{ hash: '/buscar', label: 'Buscar', icon: '🔍' },
+				{ hash: '/memorizar', label: 'Memorizar', icon: '🧠' },
 				{ hash: '/devocional', label: 'Devoción', icon: '🕊️' },
 				{ hash: '/guardados', label: 'Guardado', icon: '❤' },
 			],
@@ -62,6 +66,7 @@ module.exports = {
 				'/hoy': 'Today',
 				'/leer': 'Reader',
 				'/buscar': 'Search',
+				'/memorizar': 'Memorize',
 				'/devocional': 'Devotional',
 				'/guardados': 'Favorites',
 			};

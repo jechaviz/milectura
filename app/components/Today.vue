@@ -6,7 +6,7 @@
 			<div class="p-7 sm:p-10">
 				<p class="text-xs tracking-[0.25em] text-gold-soft/80 uppercase mb-3">Versículo de hoy · {{ prettyDate }}</p>
 				<div v-if="votd" class="font-serif text-2xl sm:text-3xl leading-snug text-white">
-					<VerseBlock :verses="votd.verses" />
+					<VerseBlock :verses="votd.verses" memorizable />
 				</div>
 				<div v-else-if="err" class="text-white/60">{{ err }}</div>
 				<div v-else class="h-16 animate-pulse bg-white/5 rounded-xl"></div>

@@ -60,10 +60,12 @@ const store = Vue.reactive({
 	modules: [],
 	bibles: [],
 	fontScale: Number(localStorage.getItem('ml_font') || 1),
+	forgetica: localStorage.getItem('ml_forgetica') === '1',
 	favorites: JSON.parse(localStorage.getItem('ml_favs') || '[]'),
 	date: todayISO(),
 	setVersion(v) { this.version = v; localStorage.setItem('ml_version', v); },
 	setFont(v) { this.fontScale = Math.min(1.8, Math.max(0.8, v)); localStorage.setItem('ml_font', this.fontScale); },
+	toggleForgetica() { this.forgetica = !this.forgetica; localStorage.setItem('ml_forgetica', this.forgetica ? '1' : '0'); },
 	toggleFav(item) {
 		const key = item.ref;
 		const i = this.favorites.findIndex((f) => f.ref === key);

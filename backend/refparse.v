@@ -48,12 +48,36 @@ fn norm_book_key(s string) string {
 	return n
 }
 
+// strip_saint_prefix removes a "San/S." gospel marker so a module that stores
+// "S.Juan" / "S. Mateo" (RVR60) still resolves the bare "Juan" / "Mateo".
+fn strip_saint_prefix(name string) string {
+	n := name.trim_space()
+	low := n.to_lower()
+	if low.starts_with('s. ') {
+		return n[3..].trim_space()
+	}
+	if low.starts_with('s.') {
+		return n[2..].trim_space()
+	}
+	if low.starts_with('san ') {
+		return n[4..].trim_space()
+	}
+	if low.starts_with('s ') {
+		return n[2..].trim_space()
+	}
+	return name
+}
+
 // book_map builds normalized-name -> book_number from the module's books.
 pub fn book_map(mut db sqlite.DB) map[string]int {
 	mut m := map[string]int{}
 	for b in get_books(mut db) {
 		m[norm_book_key(b.short)] = b.number
 		m[norm_book_key(b.name)] = b.number
+		bare := strip_saint_prefix(b.name)
+		if bare != b.name {
+			m[norm_book_key(bare)] = b.number
+		}
 	}
 	return m
 }

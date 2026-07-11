@@ -45,6 +45,14 @@
 	<script src="https://cdn.jsdelivr.net/npm/@unocss/runtime@0.58.0/uno.global.js"></script>
 
 	<style>
+		/* Sans Forgetica — tipografía diseñada para ayudar a la memorización
+		   ("desirable difficulty"). Toggle en el encabezado. */
+		@font-face {
+			font-family: 'Sans Forgetica';
+			src: url('assets/mobirise/css/SansForgetica-Regular.otf') format('opentype');
+			font-display: swap;
+		}
+		.forgetica .verse, .forgetica .mem-badge { font-family: 'Sans Forgetica', Fraunces, serif !important; letter-spacing: 0.01em; }
 		:root { color-scheme: dark; }
 		html, body { margin: 0; padding: 0; background: #0b1020; }
 		#app { min-height: 100vh; }
@@ -84,6 +92,7 @@
 
 	<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader/dist/vue3-sfc-loader.js"></script>
+	<script src="app/memorize.js"></script>
 	<script src="app/main.js"></script>
 </body>
 </html>
