@@ -28,7 +28,9 @@
 							{{ store.isFav(r.ref) ? '❤' : '♡' }}
 						</button>
 					</div>
-					<p class="text-white/85 verse" :class="{ blurred: store.memMode === 'blur' }" v-html="displayT(r.t)"></p>
+					<p class="text-white/85 verse" :class="{ blurred: store.memMode === 'blur' }" v-html="displayT(r.t)"
+						@click="revealWord" @pointerdown="onPointer" @pointermove="onPointer"
+						@pointerup="clearReveal" @pointercancel="clearReveal" @pointerleave="clearReveal"></p>
 				</div>
 			</div>
 		</section>
@@ -61,8 +63,24 @@ module.exports = {
 		displayT(t) {
 			const m = this.store.memMode;
 			if ((m === 'initials' || m === 'hidden') && window.mlMem) return window.mlMem.apply(t, m);
-			if (m === 'blur') return t; // blur is CSS; keep text
+			if (m === 'blur' && window.mlMem) return window.mlMem.blurWords(t); // per-word blur
 			return this.highlight(t);
+		},
+		revealWord(e) {
+			if (this.store.memMode !== 'blur') return;
+			const w = e.target && e.target.closest && e.target.closest('.mw');
+			if (w) w.classList.toggle('reveal');
+		},
+		onPointer(e) {
+			if (this.store.memMode !== 'blur' || e.pointerType === 'mouse') return;
+			const el = document.elementFromPoint(e.clientX, e.clientY);
+			const w = el && el.closest && el.closest('.mw');
+			if (this._lastMw && this._lastMw !== w) this._lastMw.classList.remove('reveal');
+			if (w) { w.classList.add('reveal'); this._lastMw = w; }
+		},
+		clearReveal(e) {
+			if (e && e.pointerType === 'mouse') return;
+			if (this._lastMw) { this._lastMw.classList.remove('reveal'); this._lastMw = null; }
 		},
 		highlight(t) {
 			if (!this.lastQ) return t;

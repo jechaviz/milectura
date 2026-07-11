@@ -1,6 +1,7 @@
 <template>
 	<div class="verse leading-relaxed" :class="{ 'mem-on': clickable, blurred: activeStage === 'blur' }"
-		@click="onClick">
+		@click="onClick" @pointerdown="onPointer" @pointermove="onPointer"
+		@pointerup="clearReveal" @pointercancel="clearReveal" @pointerleave="clearReveal">
 		<div v-if="showBadge" class="mem-badge select-none flex items-center gap-2 mb-2 text-xs">
 			<span class="px-2 py-0.5 rounded-full glass-soft text-gold-soft">{{ stageInfo.label }}</span>
 			<span class="text-white/40">{{ clickable ? stageInfo.hint : '' }}</span>
@@ -45,7 +46,10 @@ module.exports = {
 		},
 		display() {
 			const mem = window.mlMem;
-			if (!mem || this.activeStage === 'normal' || this.activeStage === 'blur') return this.verses;
+			if (!mem || this.activeStage === 'normal') return this.verses;
+			if (this.activeStage === 'blur') {
+				return this.verses.map((v) => ({ v: v.v, t: mem.blurWords(v.t) }));
+			}
 			return this.verses.map((v) => ({ v: v.v, t: mem.apply(v.t, this.activeStage) }));
 		},
 	},
@@ -54,17 +58,43 @@ module.exports = {
 		gmode(m) { if (m !== 'libre') this.stage = 'normal'; },
 	},
 	methods: {
-		onClick() {
+		onClick(e) {
+			// In blur mode a tap toggles the tapped word (persistent reveal); it
+			// must not also cycle stages.
+			if (this.activeStage === 'blur') {
+				const w = e.target && e.target.closest && e.target.closest('.mw');
+				if (w) w.classList.toggle('reveal');
+				return;
+			}
 			if (!this.clickable) return;
 			const enabled = this.store ? this.store.memStages : null;
 			this.stage = window.mlMem ? window.mlMem.nextStage(this.stage, enabled) : 'normal';
+		},
+		// Touch drag: reveal the word under the finger (mouse uses CSS :hover). Only
+		// the word currently under the pointer is cleared, like scratching it off.
+		onPointer(e) {
+			if (this.activeStage !== 'blur' || e.pointerType === 'mouse') return;
+			const el = document.elementFromPoint(e.clientX, e.clientY);
+			const w = el && el.closest && el.closest('.mw');
+			if (this._lastMw && this._lastMw !== w) this._lastMw.classList.remove('reveal');
+			if (w) {
+				w.classList.add('reveal');
+				this._lastMw = w;
+			}
+		},
+		clearReveal(e) {
+			if (e && e.pointerType === 'mouse') return;
+			if (this._lastMw) {
+				this._lastMw.classList.remove('reveal');
+				this._lastMw = null;
+			}
 		},
 	},
 };
 </script>
 
 <style>
-.mem-on { cursor: pointer; transition: filter .25s ease; }
-.verse.blurred > span { filter: blur(4px); transition: filter .25s ease; }
-.verse.blurred:hover > span { filter: blur(1.5px); }
+.mem-on { cursor: pointer; }
+/* per-word blur + reveal lives in the global stylesheet (.verse.blurred .mw),
+   shared by VerseBlock and the search results. */
 </style>

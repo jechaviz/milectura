@@ -28,6 +28,12 @@
 		return outsideTags(html, (t) => t.replace(LETTER, '·'));
 	}
 
+	// Etapa 3 — Difuminado por palabra: envuelve cada palabra en un <span class="mw">
+	// para que el CSS la difumine y se revele individualmente al hover/tap.
+	function blurWords(html) {
+		return outsideTags(html, (t) => t.replace(/(\S+)/g, '<span class="mw">$1</span>'));
+	}
+
 	// Etapas de memorización, en orden de dificultad creciente.
 	const STAGES = [
 		{ key: 'normal', label: 'Texto completo', hint: 'Toca para memorizar' },
@@ -57,5 +63,5 @@
 		return STAGES.find((s) => s.key === key) || STAGES[0];
 	}
 
-	window.mlMem = { STAGES, apply, nextStage, stageInfo, initials, hidden };
+	window.mlMem = { STAGES, apply, nextStage, stageInfo, initials, hidden, blurWords };
 })();
