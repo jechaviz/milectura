@@ -24,11 +24,10 @@
 		<!-- Reading plan of the day -->
 		<section class="glass rounded-3xl p-6 sm:p-8">
 			<div class="flex items-center gap-3 mb-4">
-				<h2 class="font-serif text-xl text-gold-soft">Lectura del día</h2>
-				<span class="text-white/40 text-sm">plan de un año</span>
-				<div class="flex-1"></div>
+				<h2 class="font-serif text-xl text-gold-soft whitespace-nowrap">Lectura del día</h2>
+				<span class="text-white/40 text-sm whitespace-nowrap">plan de un año</span>
 				<input type="date" :value="store.date" @change="setDate($event.target.value)"
-					class="glass-soft rounded-full px-3 py-1 text-sm outline-none" />
+					class="glass-soft rounded-full px-3 py-1 text-sm outline-none shrink-0 ml-auto self-center" />
 			</div>
 
 			<div v-if="planErr" class="text-white/60">{{ planErr }}</div>
