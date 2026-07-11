@@ -56,17 +56,21 @@ pub fn plan_for_day(mut db sqlite.DB, day int) ([]ChapterId, []ChapterId) {
 			nt << c
 		}
 	}
-	ot_from := (d - 1) * ot.len / 365
-	ot_to := d * ot.len / 365
-	nt_from := (d - 1) * nt.len / 365
-	nt_to := d * nt.len / 365
-	mut ot_sel := []ChapterId{}
+	// New Testament: one chapter EVERY day, cycling through the NT (~1.4×/year) so
+	// each daily reading always includes the NT (shown pinned, first).
 	mut nt_sel := []ChapterId{}
+	if nt.len > 0 {
+		nt_sel << nt[(d - 1) % nt.len]
+	}
+	// Old Testament: proportional slice across the year, but always ≥1 chapter.
+	ot_from := (d - 1) * ot.len / 365
+	mut ot_to := d * ot.len / 365
+	if ot_to <= ot_from {
+		ot_to = ot_from + 1
+	}
+	mut ot_sel := []ChapterId{}
 	for i := ot_from; i < ot_to && i < ot.len && ot_sel.len < max_plan_chapters; i++ {
 		ot_sel << ot[i]
-	}
-	for i := nt_from; i < nt_to && i < nt.len && nt_sel.len < max_plan_chapters; i++ {
-		nt_sel << nt[i]
 	}
 	return ot_sel, nt_sel
 }
