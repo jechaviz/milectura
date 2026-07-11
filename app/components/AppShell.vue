@@ -5,7 +5,7 @@
 			<div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
 				<a href="#/hoy" class="flex items-center gap-2 no-underline shrink-0">
 					<img src="img/logo.png" alt="" class="w-9 h-9 rounded-xl" />
-					<span class="font-serif text-lg text-gold-soft leading-none">Mi Lectura<br /><span class="text-xs text-white/50 font-sans tracking-wide">DIARIA</span></span>
+					<span class="hidden min-[420px]:block md:block font-serif text-lg text-gold-soft leading-none">Mi Lectura<br /><span class="text-xs text-white/50 font-sans tracking-wide">DIARIA</span></span>
 				</a>
 
 				<!-- Desktop inline nav -->
@@ -25,9 +25,9 @@
 				<button @click="store.toggleForgetica()" :title="store.forgetica ? 'Fuente normal' : 'Sans Forgetica (ayuda a memorizar)'"
 					class="w-9 h-9 rounded-full glass-soft leading-none transition shrink-0"
 					:class="store.forgetica ? 'text-gold-soft bg-white/15' : 'text-white/60 hover:text-white'">🧠</button>
-				<div class="hidden sm:flex items-center gap-1 glass-soft rounded-full px-1.5 py-1 shrink-0">
-					<button @click="store.setFont(store.fontScale - 0.1)" class="w-7 h-7 rounded-full hover:bg-white/15 leading-none">A-</button>
-					<button @click="store.setFont(store.fontScale + 0.1)" class="w-7 h-7 rounded-full hover:bg-white/15 text-lg leading-none">A+</button>
+				<div class="flex items-center gap-1 glass-soft rounded-full px-1.5 py-1 shrink-0">
+					<button @click="store.setFont(store.fontScale - 0.1)" title="Reducir texto" class="w-7 h-7 rounded-full hover:bg-white/15 leading-none">A-</button>
+					<button @click="store.setFont(store.fontScale + 0.1)" title="Aumentar texto" class="w-7 h-7 rounded-full hover:bg-white/15 text-lg leading-none">A+</button>
 				</div>
 			</div>
 		</header>
