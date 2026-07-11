@@ -1,12 +1,10 @@
 <template>
-	<div class="space-y-5">
+	<div class="space-y-5 lg:max-w-3xl lg:mx-auto">
 		<!-- Header + source -->
 		<section class="glass rounded-3xl p-5 sm:p-7">
 			<div class="flex items-center gap-3 flex-wrap">
 				<h1 class="font-serif text-2xl text-gold-soft">Memorizar</h1>
-				<span class="text-white/50 text-sm">esconde el texto por etapas y recítalo</span>
-				<div class="flex-1"></div>
-				<button @click="store.toggleForgetica()" class="chip">{{ store.forgetica ? '🧠 Fuente normal' : '🧠 Sans Forgetica' }}</button>
+				<span class="text-white/50 text-sm">esconde el texto y recítalo</span>
 			</div>
 			<div class="mt-4 flex gap-2 flex-wrap">
 				<button v-for="s in sources" :key="s.key" class="chip"
@@ -14,22 +12,22 @@
 			</div>
 		</section>
 
-		<!-- Choose which memorization FORMS to use (persisted globally) -->
+		<!-- Mode control (drives the GLOBAL memorization mode) -->
 		<section class="glass-soft rounded-2xl p-3 sm:p-4 space-y-3">
 			<div class="flex items-center gap-2 flex-wrap text-sm">
+				<span class="text-white/50 px-1">Modo:</span>
+				<button class="chip" :class="store.memMode === 'off' ? '!bg-white/20 text-gold-soft' : ''" @click="store.setMemMode('off')">📖 Completo</button>
+				<button class="chip" :class="store.memMode === 'libre' ? '!bg-white/20 text-gold-soft' : ''" @click="store.setMemMode('libre')">👆 Libre</button>
+				<button v-for="st in enabledStages" :key="st.key" class="chip"
+					:class="store.memMode === st.key ? '!bg-white/20 text-gold-soft' : ''" @click="store.setMemMode(st.key)">{{ st.label }}</button>
+			</div>
+			<div class="flex items-center gap-2 flex-wrap text-sm border-t border-white/10 pt-3">
 				<span class="text-white/50 px-1">Formas:</span>
 				<button v-for="st in allStages" :key="st.key" class="chip"
 					:class="store.memStages.includes(st.key) ? '!bg-white/20 text-gold-soft' : 'opacity-50'"
 					@click="store.toggleMemStage(st.key)">
 					<span>{{ store.memStages.includes(st.key) ? '✓' : '' }}</span> {{ st.label }}
 				</button>
-				<span class="text-white/30 text-xs hidden sm:inline">— elige cómo se esconde el texto</span>
-			</div>
-			<div class="flex items-center gap-2 flex-wrap text-sm border-t border-white/10 pt-3">
-				<span class="text-white/50 px-1">Modo:</span>
-				<button class="chip" :class="mode === 'libre' ? '!bg-white/20 text-gold-soft' : ''" @click="mode='libre'">👆 Libre (toca el texto)</button>
-				<button v-for="st in enabledStages" :key="st.key" class="chip"
-					:class="mode === st.key ? '!bg-white/20 text-gold-soft' : ''" @click="mode = st.key">{{ st.label }}</button>
 			</div>
 		</section>
 
@@ -47,15 +45,13 @@
 			</div>
 
 			<div class="flex-1 flex items-center">
-				<VerseBlock :key="current.ref + mode" :verses="current.verses"
-					:memorizable="mode === 'libre'" :forceStage="mode === 'libre' ? '' : mode"
+				<VerseBlock :key="current.ref" :verses="current.verses"
 					class="font-serif text-2xl sm:text-3xl leading-relaxed text-white w-full" />
 			</div>
 
-			<!-- Controls -->
 			<div class="mt-8 flex items-center gap-2 flex-wrap">
 				<button class="btn-ghost" @click="prev" :disabled="idx===0" :class="idx===0 ? 'opacity-40' : ''">‹ Anterior</button>
-				<button class="btn-gold" @click="reveal">👁 Revelar</button>
+				<button class="btn-gold" @click="store.setMemMode('off')">👁 Revelar</button>
 				<button class="btn-ghost" @click="fav(current)">{{ store.isFav(current.ref) ? '❤ Guardado' : '♡ Guardar' }}</button>
 				<div class="flex-1"></div>
 				<button class="btn-ghost" @click="next" :disabled="idx>=deck.length-1" :class="idx>=deck.length-1 ? 'opacity-40' : ''">Siguiente ›</button>
@@ -65,17 +61,15 @@
 		<!-- Strategy explainer -->
 		<section class="glass-soft rounded-2xl p-5 text-sm text-white/70 space-y-2">
 			<p class="text-gold-soft font-medium">Las estrategias</p>
-			<p><b class="text-white/90">Iniciales</b> — cada palabra deja solo su primera letra. Tu mente completa el resto.</p>
-			<p><b class="text-white/90">Oculto</b> — desaparecen todas las letras; queda la estructura (puntuación y espacios) como andamiaje.</p>
-			<p><b class="text-white/90">Difuminado</b> — el texto sigue ahí pero borroso: recítalo de memoria y pasa el cursor para confirmar.</p>
-			<p><b class="text-white/90">Sans Forgetica</b> — una tipografía con “dificultad deseable” que mejora la retención (botón 🧠).</p>
-			<p class="text-white/40">En modo Libre, toca el versículo para avanzar de etapa: completo → iniciales → oculto → difuminado.</p>
+			<p><b class="text-white/90">Iniciales</b> — cada palabra deja solo su primera letra.</p>
+			<p><b class="text-white/90">Oculto</b> — desaparecen todas las letras; queda la estructura.</p>
+			<p><b class="text-white/90">Difuminado</b> — el texto sigue ahí pero borroso; pasa el cursor para confirmar.</p>
+			<p class="text-white/40">El modo elegido aquí se aplica en toda la app (también desde el botón 🧠).</p>
 		</section>
 	</div>
 </template>
 
 <script>
-// Mazo curado de promesas clásicas (incluye el set de Juan 14–16 del sitio previo).
 const PROMESAS = [
 	'Juan 3:16', 'Salmos 23:1-4', 'Proverbios 3:5-6', 'Filipenses 4:13', 'Isaías 41:10',
 	'Josué 1:9', 'Romanos 8:28', 'Mateo 6:33', 'Filipenses 4:6-7', 'Salmos 119:105',
@@ -89,7 +83,6 @@ module.exports = {
 	data() {
 		return {
 			source: 'promesas',
-			mode: 'libre',
 			deck: [],
 			idx: 0,
 			err: '',
@@ -108,7 +101,6 @@ module.exports = {
 	},
 	watch: {
 		'store.version'() { this.load(); },
-		'store.memStages'() { if (this.mode !== 'libre' && !this.store.memStages.includes(this.mode)) this.mode = 'libre'; },
 	},
 	methods: {
 		setSource(k) { this.source = k; this.idx = 0; this.load(); },
@@ -129,9 +121,12 @@ module.exports = {
 		},
 		next() { if (this.idx < this.deck.length - 1) this.idx++; },
 		prev() { if (this.idx > 0) this.idx--; },
-		reveal() { this.mode = 'libre'; }, // libre + normal reveals full text
 		fav(c) { if (c.ref) this.store.toggleFav({ ref: c.ref, verses: c.verses, version: this.store.version }); },
 	},
-	mounted() { this.load(); },
+	mounted() {
+		// entering the practice page starts interactive if memorization was off
+		if (this.store.memMode === 'off') this.store.setMemMode('libre');
+		this.load();
+	},
 };
 </script>

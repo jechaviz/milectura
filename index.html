@@ -78,9 +78,20 @@
 		.verse t, .verse .t { display: inline; }
 		.verse J, .verse .J { color: #f0b8b0; }
 		::selection { background: rgba(232,195,126,0.35); }
+		/* blur memorization on plain (non-VerseBlock) verse paragraphs, e.g. search */
+		p.verse.blurred { filter: blur(4px); transition: filter .25s ease; }
+		p.verse.blurred:hover { filter: blur(1.5px); }
 		/* thin scrollbar */
 		*::-webkit-scrollbar { width: 8px; height: 8px; }
 		*::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 8px; }
+		/* Devotional HTML from MyBible modules (rendered in Hoy) */
+		.devo { color: rgba(255,255,255,0.85); line-height: 1.7; }
+		.devo h1, .devo .page-header { font-family: Fraunces, serif; color: #f3dcae; font-size: 1.5rem; margin: 0 0 1rem; }
+		.devo h2, .devo h3 { font-family: Fraunces, serif; color: #e8c37e; margin: 1.4rem 0 .5rem; }
+		.devo p { margin: 0 0 1rem; }
+		.devo a { color: #7fb0e8; text-decoration: none; }
+		.devo blockquote { border-left: 3px solid rgba(232,195,126,.4); padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #cbd6ea; }
+		.devo img { max-width: 100%; border-radius: 12px; }
 		#boot { position: fixed; inset: 0; display: grid; place-items: center; color: #e8c37e; font-family: Fraunces, serif; font-size: 1.4rem; }
 		#boot .halo { width: 54px; height: 54px; margin: 0 auto 14px; border-radius: 50%; border: 2px solid rgba(232,195,126,0.25); border-top-color: #e8c37e; animation: spin 0.9s linear infinite; }
 		@keyframes spin { to { transform: rotate(360deg); } }

@@ -22,13 +22,13 @@
 			<div class="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3">
 				<div v-for="(r,i) in results" :key="i" class="glass-soft rounded-2xl p-4 hover:bg-white/12 transition group">
 					<div class="flex items-center gap-2 mb-1">
-						<a :href="'#/leer?b='+r.book+'&c='+r.chapter" class="text-gold-soft font-medium no-underline hover:underline">{{ r.ref }}</a>
+						<a :href="'#/biblia?b='+r.book+'&c='+r.chapter" class="text-gold-soft font-medium no-underline hover:underline">{{ r.ref }}</a>
 						<div class="flex-1"></div>
 						<button class="opacity-0 group-hover:opacity-100 chip !py-0.5 transition" @click="store.toggleFav({ ref: r.ref, verses: [{v:r.verse,t:r.t}], version: store.version })">
 							{{ store.isFav(r.ref) ? '❤' : '♡' }}
 						</button>
 					</div>
-					<p class="text-white/85 verse" v-html="highlight(r.t)"></p>
+					<p class="text-white/85 verse" :class="{ blurred: store.memMode === 'blur' }" v-html="displayT(r.t)"></p>
 				</div>
 			</div>
 		</section>
@@ -55,6 +55,14 @@ module.exports = {
 				this.results = r.results; this.more = r.more; this.lastQ = q;
 			} catch (e) { this.err = e.message; }
 			this.loading = false;
+		},
+		// When a memorization form is active globally, apply it; otherwise keep the
+		// search highlight. (Memorization works in every view, search included.)
+		displayT(t) {
+			const m = this.store.memMode;
+			if ((m === 'initials' || m === 'hidden') && window.mlMem) return window.mlMem.apply(t, m);
+			if (m === 'blur') return t; // blur is CSS; keep text
+			return this.highlight(t);
 		},
 		highlight(t) {
 			if (!this.lastQ) return t;

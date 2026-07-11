@@ -6,7 +6,7 @@
 			<div class="p-7 sm:p-10 lg:p-14 lg:max-w-4xl">
 				<p class="text-xs tracking-[0.25em] text-gold-soft/80 uppercase mb-3">Versículo de hoy · {{ prettyDate }}</p>
 				<div v-if="votd" class="font-serif text-2xl sm:text-3xl lg:text-4xl leading-snug text-white">
-					<VerseBlock :verses="votd.verses" memorizable />
+					<VerseBlock :verses="votd.verses" />
 				</div>
 				<div v-else-if="err" class="text-white/60">{{ err }}</div>
 				<div v-else class="h-16 animate-pulse bg-white/5 rounded-xl"></div>
@@ -49,6 +49,16 @@
 				</div>
 			</div>
 		</section>
+
+		<!-- Devotional of the day (merged from the old Devoción view) -->
+		<section v-if="devoHtml || devoErr" class="glass rounded-3xl p-6 sm:p-8 lg:p-10">
+			<div class="flex items-center gap-3 mb-4">
+				<h2 class="font-serif text-xl text-gold-soft">Devocional</h2>
+				<span v-if="devoName" class="text-white/40 text-sm truncate">{{ devoName }}</span>
+			</div>
+			<div v-if="devoErr" class="text-white/50 text-sm">{{ devoErr }}</div>
+			<div v-else class="devo mx-auto max-w-3xl" v-html="devoHtml"></div>
+		</section>
 	</div>
 </template>
 
@@ -57,7 +67,7 @@ module.exports = {
 	inject: ['api', 'store', 'comp'],
 	components: { VerseBlock: window.mlComp('VerseBlock') },
 	data() {
-		return { votd: null, err: '', plan: null, planErr: '', heroImgs: [
+		return { votd: null, err: '', plan: null, planErr: '', devoHtml: '', devoName: '', devoErr: '', heroImgs: [
 			'AyutthayaTemple.jpg', 'BathCircus.jpg', 'BourgesMarsh.jpg', 'CreteHarbor.jpg',
 			'ManhattanAerial.jpg', 'MountSegla.jpg', 'ParisLouvre.jpg', 'SanBlasIslands.jpg',
 		] };
@@ -95,6 +105,9 @@ module.exports = {
 			catch (e) { this.err = e.message; }
 			try { this.plan = await this.api.get(`/plan?v=${v}&date=${d}`); }
 			catch (e) { this.planErr = e.message; }
+			this.devoHtml = ''; this.devoName = ''; this.devoErr = '';
+			try { const dv = await this.api.get(`/devotion?date=${d}`); this.devoHtml = dv.html; this.devoName = dv.name; }
+			catch (e) { this.devoErr = 'Sin devocional para hoy.'; }
 		},
 		fav() { if (this.votd) this.store.toggleFav({ ref: this.votd.ref, verses: this.votd.verses, version: this.store.version }); },
 		async surprise() {

@@ -2,7 +2,7 @@
 	<div class="min-h-screen font-sans text-white/90" :class="{ forgetica: store.forgetica }" :style="{ fontSize: (store.fontScale) + 'rem' }">
 		<!-- Top bar -->
 		<header class="sticky top-0 z-50 glass border-x-0 border-t-0">
-			<div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+			<div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-2 sm:gap-3">
 				<a href="#/hoy" class="flex items-center gap-2 no-underline shrink-0">
 					<img src="img/logo.png" alt="" class="w-9 h-9 rounded-xl" />
 					<span class="hidden min-[420px]:block md:block font-serif text-lg text-gold-soft leading-none">Mi Lectura<br /><span class="text-xs text-white/50 font-sans tracking-wide">DIARIA</span></span>
@@ -19,16 +19,20 @@
 
 				<div class="flex-1 md:hidden"></div>
 				<select :value="store.version" @change="store.setVersion($event.target.value)"
-					class="glass-soft rounded-full px-3 py-1.5 text-sm text-white/90 outline-none cursor-pointer shrink-0">
+					class="glass-soft rounded-full px-2.5 py-1.5 text-sm text-white/90 outline-none cursor-pointer shrink-0">
 					<option v-for="b in store.bibles" :key="b.id" :value="b.id" class="text-ink">{{ b.id }}</option>
 				</select>
-				<button @click="store.toggleForgetica()" :title="store.forgetica ? 'Fuente normal' : 'Sans Forgetica (ayuda a memorizar)'"
-					class="w-9 h-9 rounded-full glass-soft leading-none transition shrink-0"
-					:class="store.forgetica ? 'text-gold-soft bg-white/15' : 'text-white/60 hover:text-white'">🧠</button>
 				<div class="flex items-center gap-1 glass-soft rounded-full px-1.5 py-1 shrink-0">
 					<button @click="store.setFont(store.fontScale - 0.1)" title="Reducir texto" class="w-7 h-7 rounded-full hover:bg-white/15 leading-none">A-</button>
 					<button @click="store.setFont(store.fontScale + 0.1)" title="Aumentar texto" class="w-7 h-7 rounded-full hover:bg-white/15 text-lg leading-none">A+</button>
 				</div>
+				<button @click="fav = true" title="Guardados"
+					class="relative w-9 h-9 rounded-full glass-soft leading-none text-white/70 hover:text-white transition shrink-0">
+					❤<span v-if="store.favorites.length" class="absolute -top-1 -right-1 text-[0.6rem] bg-gold text-ink-900 rounded-full min-w-[1rem] h-4 px-1 grid place-items-center font-semibold">{{ store.favorites.length }}</span>
+				</button>
+				<button @click="mem = true" title="Modo memorización"
+					class="w-9 h-9 rounded-full glass-soft leading-none transition shrink-0"
+					:class="store.memMode !== 'off' || store.forgetica ? 'text-gold-soft bg-white/15 ring-1 ring-gold/40' : 'text-white/70 hover:text-white'">🧠</button>
 			</div>
 		</header>
 
@@ -41,7 +45,7 @@
 
 		<!-- Bottom tab nav (mobile only) -->
 		<nav class="fixed bottom-0 inset-x-0 z-50 glass border-x-0 border-b-0 md:hidden">
-			<div class="px-1 grid grid-cols-6 gap-0.5 py-1.5">
+			<div class="px-1 grid gap-0.5 py-1.5" :style="{ gridTemplateColumns: 'repeat(' + tabs.length + ',minmax(0,1fr))' }">
 				<a v-for="t in tabs" :key="t.hash" :href="'#' + t.hash"
 					class="flex flex-col items-center gap-0.5 py-1.5 rounded-2xl no-underline transition"
 					:class="isActive(t.hash) ? 'text-gold-soft bg-white/10' : 'text-white/55 hover:text-white/85'">
@@ -50,22 +54,35 @@
 				</a>
 			</div>
 		</nav>
+
+		<!-- Global drawers (available from every view) -->
+		<Drawer :open="mem" title="Memorización" side="bottom" @close="mem = false">
+			<MemPanel @close="mem = false" />
+		</Drawer>
+		<Drawer :open="fav" title="Guardado en mi corazón" side="right" @close="fav = false">
+			<Favorites embedded @open="fav = false" />
+		</Drawer>
 	</div>
 </template>
 
 <script>
 module.exports = {
 	inject: ['store', 'comp'],
+	components: {
+		Drawer: window.mlComp('Drawer'),
+		MemPanel: window.mlComp('MemPanel'),
+		Favorites: window.mlComp('Favorites'),
+	},
 	data() {
 		return {
 			route: location.hash || '#/hoy',
+			mem: false,
+			fav: false,
 			tabs: [
 				{ hash: '/hoy', label: 'Hoy', icon: '✦' },
-				{ hash: '/leer', label: 'Leer', icon: '📖' },
+				{ hash: '/biblia', label: 'Biblia', icon: '📖' },
 				{ hash: '/buscar', label: 'Buscar', icon: '🔍' },
 				{ hash: '/memorizar', label: 'Memorizar', icon: '🧠' },
-				{ hash: '/devocional', label: 'Devoción', icon: '🕊️' },
-				{ hash: '/guardados', label: 'Guardado', icon: '❤' },
 			],
 		};
 	},
@@ -74,18 +91,17 @@ module.exports = {
 		view() {
 			const map = {
 				'/hoy': 'Today',
-				'/leer': 'Reader',
+				'/biblia': 'Reader',
+				'/leer': 'Reader', // legacy alias
 				'/buscar': 'Search',
 				'/memorizar': 'Memorize',
-				'/devocional': 'Devotional',
-				'/guardados': 'Favorites',
 			};
 			return this.comp(map[this.base] || 'Today');
 		},
 	},
 	methods: {
-		isActive(hash) { return this.base === hash; },
-		onHash() { this.route = location.hash || '#/hoy'; window.scrollTo({ top: 0, behavior: 'smooth' }); },
+		isActive(hash) { return this.base === hash || (hash === '/biblia' && this.base === '/leer'); },
+		onHash() { this.route = location.hash || '#/hoy'; this.mem = false; this.fav = false; window.scrollTo({ top: 0, behavior: 'smooth' }); },
 	},
 	mounted() {
 		window.addEventListener('hashchange', this.onHash);
