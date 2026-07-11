@@ -15,16 +15,21 @@ pub mut:
 	chapter int
 }
 
+// all_chapters enumerates every (book, chapter) WITHOUT scanning all 31k verses.
+// The old `GROUP BY book_number, chapter` touched every row group; instead we
+// read one max-chapter-per-book (chapter_counts: ~66 index seeks) and expand the
+// contiguous chapter range in memory (1189 tiny structs). Canonical bibles have
+// no chapter gaps, so 1..max is exact.
 fn all_chapters(mut db sqlite.DB) []ChapterId {
-	rows := db.exec('SELECT book_number, chapter FROM verses GROUP BY book_number, chapter ORDER BY book_number, chapter') or {
-		[]sqlite.Row{}
-	}
+	counts := chapter_counts(mut db)
+	mut books := counts.keys()
+	books.sort()
 	mut out := []ChapterId{}
-	for r in rows {
-		if r.vals.len >= 2 {
+	for b in books {
+		for c := 1; c <= counts[b]; c++ {
 			out << ChapterId{
-				book:    r.vals[0].int()
-				chapter: r.vals[1].int()
+				book:    b
+				chapter: c
 			}
 		}
 	}

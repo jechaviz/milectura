@@ -59,9 +59,10 @@ fn h_books(mut app App, mut req Request) Response {
 		db.close() or {}
 	}
 	books := get_books(mut db)
+	counts := chapter_counts(mut db) // one query, not one per book
 	mut parts := []string{}
 	for b in books {
-		mc := max_chapter(mut db, b.number)
+		mc := counts[b.number]
 		parts << '{"n":${b.number},"short":${json_quote(b.short)},"name":${json_quote(b.name)},"color":${json_quote(b.color)},"chapters":${mc}}'
 	}
 	return ok_json('{"version":${json_quote(vid)},"books":[${parts.join(',')}]}')
@@ -110,16 +111,7 @@ fn h_chapter(mut app App, mut req Request) Response {
 		}
 	}
 	mc := max_chapter(mut db, b)
-	books := get_books(mut db)
-	mut bname := ''
-	mut bshort := ''
-	for bk in books {
-		if bk.number == b {
-			bname = bk.name
-			bshort = bk.short
-			break
-		}
-	}
+	bshort, bname := book_short_long(mut db, b) // one index seek, no full load
 	return guarded_json('{"version":${json_quote(vid)},"book":${b},"bookName":${json_quote(bname)},"bookShort":${json_quote(bshort)},"chapter":${c},"maxChapter":${mc},"verses":${verses_json(verses)},"subheadings":${subheadings_json(subs)}}')
 }
 
@@ -184,14 +176,7 @@ fn h_votd(mut app App, mut req Request) Response {
 		db.close() or {}
 	}
 	verses := get_verse_range(mut db, r.b, r.c, r.v1, r.v2)
-	books := get_books(mut db)
-	mut bname := ''
-	for bk in books {
-		if bk.number == r.b {
-			bname = bk.name
-			break
-		}
-	}
+	bname := book_name(mut db, r.b) // one index seek
 	mut label := '${bname} ${r.c}:${r.v1}'
 	if r.v2 > r.v1 {
 		label += '-${r.v2}'
@@ -445,30 +430,32 @@ fn h_random(mut app App, mut req Request) Response {
 	defer {
 		db.close() or {}
 	}
-	crows := db.exec('SELECT count(*) FROM verses') or { return err_json(500, 'error') }
-	total := if crows.len > 0 { crows[0].vals[0].int() } else { 0 }
-	if total == 0 {
+	// Index-only random pick: no COUNT(*) full scan and no OFFSET row-walk. Draw a
+	// random book/chapter via chapter_counts (~66 index seeks), then a random verse
+	// bounded by max_verse (one seek), and fetch the first existing verse >= that
+	// (a range seek on the PK, O(log n)) so versification gaps never miss.
+	counts := chapter_counts(mut db)
+	mut bnums := counts.keys()
+	if bnums.len == 0 {
 		return err_json(404, 'módulo vacío')
 	}
-	off := rand.intn(total) or { 0 }
-	rows := db.exec('SELECT book_number, chapter, verse, text FROM verses LIMIT 1 OFFSET ${off}') or {
+	bnums.sort()
+	b := bnums[rand.intn(bnums.len) or { 0 }]
+	c := (rand.intn(counts[b]) or { 0 }) + 1
+	mv := max_verse(mut db, b, c)
+	if mv == 0 {
 		return err_json(500, 'error')
 	}
-	if rows.len == 0 || rows[0].vals.len < 4 {
+	target := (rand.intn(mv) or { 0 }) + 1
+	rows := db.exec('SELECT verse, text FROM verses WHERE book_number=${b} AND chapter=${c} AND verse>=${target} ORDER BY verse LIMIT 1') or {
 		return err_json(500, 'error')
 	}
-	b := rows[0].vals[0].int()
-	c := rows[0].vals[1].int()
-	v := rows[0].vals[2].int()
-	t := clean_verse(rows[0].vals[3])
-	books := get_books(mut db)
-	mut bname := ''
-	for bk in books {
-		if bk.number == b {
-			bname = bk.name
-			break
-		}
+	if rows.len == 0 || rows[0].vals.len < 2 {
+		return err_json(500, 'error')
 	}
+	v := rows[0].vals[0].int()
+	t := clean_verse(rows[0].vals[1])
+	bname := book_name(mut db, b)
 	label := '${bname} ${c}:${v}'
 	return ok_json('{"version":${json_quote(vid)},"ref":${json_quote(label)},"book":${b},"chapter":${c},"verse":${v},"t":${json_quote(t)}}')
 }

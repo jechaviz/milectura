@@ -214,6 +214,8 @@ pub fn get_verse_range(mut db sqlite.DB, book int, chapter int, v1 int, v2 int) 
 }
 
 pub fn max_chapter(mut db sqlite.DB, book int) int {
+	// max(chapter) over the PK prefix (book_number,chapter,verse) — SQLite serves
+	// it from the index (one seek to the last matching row), O(log n), no scan.
 	rows := db.exec('SELECT max(chapter) FROM verses WHERE book_number=${book}') or {
 		[]sqlite.Row{}
 	}
@@ -221,6 +223,51 @@ pub fn max_chapter(mut db sqlite.DB, book int) int {
 		return rows[0].vals[0].int()
 	}
 	return 0
+}
+
+// chapter_counts returns book_number -> last chapter in ONE query. `max(chapter)
+// GROUP BY book_number` is an index max-per-group over the PK, i.e. ~66 index
+// seeks — NOT a full 31k-row scan. Replaces both the per-book max_chapter loop
+// (h_books) and the whole-bible `GROUP BY book,chapter` enumeration (plan).
+pub fn chapter_counts(mut db sqlite.DB) map[int]int {
+	rows := db.exec('SELECT book_number, max(chapter) FROM verses GROUP BY book_number') or {
+		[]sqlite.Row{}
+	}
+	mut m := map[int]int{}
+	for r in rows {
+		if r.vals.len >= 2 {
+			m[r.vals[0].int()] = r.vals[1].int()
+		}
+	}
+	return m
+}
+
+// max_verse: last verse of a chapter via the PK prefix — one index seek.
+pub fn max_verse(mut db sqlite.DB, book int, chapter int) int {
+	rows := db.exec('SELECT max(verse) FROM verses WHERE book_number=${book} AND chapter=${chapter}') or {
+		[]sqlite.Row{}
+	}
+	if rows.len > 0 && rows[0].vals.len > 0 {
+		return rows[0].vals[0].int()
+	}
+	return 0
+}
+
+// book_short_long fetches one book's names by PK — one index seek, instead of
+// loading all 66 books and scanning them linearly for a single name.
+pub fn book_short_long(mut db sqlite.DB, num int) (string, string) {
+	rows := db.exec('SELECT short_name, long_name FROM books WHERE book_number=${num} LIMIT 1') or {
+		return '', ''
+	}
+	if rows.len > 0 && rows[0].vals.len >= 2 {
+		return rows[0].vals[0], rows[0].vals[1]
+	}
+	return '', ''
+}
+
+pub fn book_name(mut db sqlite.DB, num int) string {
+	_, long := book_short_long(mut db, num)
+	return long
 }
 
 // get_subheadings reads section titles for a chapter. Works both against a
