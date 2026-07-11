@@ -1,0 +1,111 @@
+# ============================================================================
+# Mi Lectura Diaria — Apache .htaccess for Spaceship cPanel
+#                     (appniverse.com/milectura)
+# ----------------------------------------------------------------------------
+# Hosts the nodeless Vue3 SPA (static files) + the V backend (CGI mode) under a
+# single sub-path: https://appniverse.com/milectura
+#
+# Apache serves the static SPA directly and forwards /api requests to a thin PHP
+# shim (shim.php) that proc_open()s the single native V binary in CGI mode and
+# relays its response. PHP is always available on cPanel; the binary and the
+# read-only MyBible modules stay OUTSIDE the docroot.
+#
+# ---- Minimal deployed footprint --------------------------------------------
+#   <docroot>/.htaccess                  <- this file
+#   <docroot>/shim.php                   <- thin PHP shim (execs the binary)
+#   <docroot>/index.html + app/ + img/   <- the nodeless Vue3 SPA (static)
+#   OUTSIDE docroot (e.g. ~/apps/milectura/shared/):
+#       bin/milectura                    <- ONE native V binary (chmod 755)
+#       modules/*.SQLite3                <- read-only MyBible (ph4.org) modules
+#
+# ---- Build the single binary (on a Linux box / the server, matching arch) ---
+#   cd backend && v -prod -o milectura .
+#   chmod 755 milectura   # place at ~/apps/milectura/shared/bin/milectura
+#
+# The binary strips ML_BASE_PATH (/milectura) itself (see cgi.v); the host paths
+# (ML_BIN / ML_MODULES / ML_BASE) are what you edit in shim.php per host.
+# ============================================================================
+
+Options +FollowSymLinks -Indexes
+DirectoryIndex index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /milectura/
+
+  # --- 1. Serve real static files / directories as-is -----------------------
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # --- 2. Dynamic routes -> PHP shim -> single native V binary --------------
+  # /api/* is handled by the V binary; the shim execs it in CGI mode. The full
+  # REQUEST_URI (incl. the /milectura prefix) is preserved; the backend strips
+  # ML_BASE_PATH itself (see cgi.v). [QSA] keeps the query string.
+  RewriteRule ^api(/.*)?$   shim.php [QSA,L]
+
+  # --- 3. SPA client-side fallback ------------------------------------------
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+  ErrorDocument 404 /milectura/index.html
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Compression
+# ---------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/x-javascript
+  AddOutputFilterByType DEFLATE application/json application/xml
+  AddOutputFilterByType DEFLATE image/svg+xml font/ttf font/otf font/woff font/woff2
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Cache headers
+# ---------------------------------------------------------------------------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css                "access plus 1 year"
+  ExpiresByType application/javascript  "access plus 1 year"
+  ExpiresByType text/javascript         "access plus 1 year"
+  ExpiresByType image/png               "access plus 1 year"
+  ExpiresByType image/jpeg              "access plus 1 year"
+  ExpiresByType image/svg+xml           "access plus 1 year"
+  ExpiresByType image/webp              "access plus 1 year"
+  ExpiresByType image/x-icon            "access plus 1 year"
+  ExpiresByType font/woff2              "access plus 1 year"
+  # .vue SFCs are fetched at runtime by vue3-sfc-loader; revalidate so edits ship.
+  ExpiresByType text/html               "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|otf)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  # Revalidate the shell, the app JS and the .vue components so deploys apply.
+  <FilesMatch "\.(html|vue)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "main\.js$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Never serve DBs, env, or module files publicly (they live outside docroot on
+# the server, but deny by extension as defense in depth).
+# ---------------------------------------------------------------------------
+<FilesMatch "(^\.env|\.db|\.sqlite3?|v\.mod)$">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_mime.c>
+  AddType application/json .json
+  AddType text/plain .vue
+  AddType font/woff2 .woff2
+</IfModule>

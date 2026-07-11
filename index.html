@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Mi Lectura Diaria — La Palabra de Dios cada día</title>
+	<meta name="description" content="Lectura bíblica diaria, versículo del día, planes de un año, devocionales y búsqueda — en tu versión favorita (Reina-Valera 1960, NTV)." />
+	<meta name="theme-color" content="#0b1020" />
+	<link rel="icon" type="image/png" href="img/logo.png" />
+
+	<!-- Social -->
+	<meta property="og:title" content="Mi Lectura Diaria" />
+	<meta property="og:description" content="La Palabra de Dios cada día: versículo del día, plan anual, devocionales y búsqueda." />
+	<meta property="og:type" content="website" />
+
+	<!-- Fonts -->
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+	<!-- UnoCSS runtime (nodeless utility CSS, no build step) -->
+	<script>
+		window.__unocss = {
+			theme: {
+				colors: {
+					ink: { DEFAULT: '#0b1020', soft: '#141b33', 900: '#070b18' },
+					gold: { DEFAULT: '#e8c37e', soft: '#f3dcae', deep: '#c69b52' },
+					sky: { DEFAULT: '#7fb0e8', soft: '#a9cbf2' },
+				},
+				fontFamily: {
+					serif: 'Fraunces, Georgia, serif',
+					sans: 'Inter, system-ui, sans-serif',
+				},
+			},
+			shortcuts: [
+				['glass', 'bg-white/8 backdrop-blur-xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.37)]'],
+				['glass-soft', 'bg-white/6 backdrop-blur-lg border border-white/10'],
+				['btn', 'inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full font-medium transition-all duration-200 cursor-pointer select-none'],
+				['btn-gold', 'btn bg-gradient-to-br from-gold-soft to-gold-deep text-ink-900 hover:shadow-[0_6px_24px_rgba(232,195,126,0.4)] hover:-translate-y-0.5'],
+				['btn-ghost', 'btn glass-soft text-white/90 hover:bg-white/15'],
+				['chip', 'inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm glass-soft text-white/80 hover:text-white hover:bg-white/15 cursor-pointer transition'],
+			],
+		};
+	</script>
+	<script src="https://cdn.jsdelivr.net/npm/@unocss/runtime@0.58.0/uno.global.js"></script>
+
+	<style>
+		:root { color-scheme: dark; }
+		html, body { margin: 0; padding: 0; background: #0b1020; }
+		#app { min-height: 100vh; }
+		/* Aurora backdrop */
+		body::before {
+			content: ''; position: fixed; inset: 0; z-index: -2;
+			background:
+				radial-gradient(60% 50% at 15% 10%, rgba(127,176,232,0.20), transparent 60%),
+				radial-gradient(55% 45% at 85% 15%, rgba(232,195,126,0.18), transparent 60%),
+				radial-gradient(70% 60% at 50% 100%, rgba(90,120,200,0.22), transparent 65%),
+				linear-gradient(160deg, #0b1020 0%, #0e1428 50%, #070b18 100%);
+		}
+		body::after {
+			content: ''; position: fixed; inset: 0; z-index: -1; opacity: 0.4;
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+		}
+		.fade-enter-active, .fade-leave-active { transition: opacity .35s ease, transform .35s ease; }
+		.fade-enter-from { opacity: 0; transform: translateY(12px); }
+		.fade-leave-to { opacity: 0; transform: translateY(-8px); }
+		/* verse markup from MyBible modules */
+		.verse e, .verse .e { font-style: italic; color: #cbd6ea; }
+		.verse i { font-style: italic; }
+		.verse t, .verse .t { display: inline; }
+		.verse J, .verse .J { color: #f0b8b0; }
+		::selection { background: rgba(232,195,126,0.35); }
+		/* thin scrollbar */
+		*::-webkit-scrollbar { width: 8px; height: 8px; }
+		*::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 8px; }
+		#boot { position: fixed; inset: 0; display: grid; place-items: center; color: #e8c37e; font-family: Fraunces, serif; font-size: 1.4rem; }
+		#boot .halo { width: 54px; height: 54px; margin: 0 auto 14px; border-radius: 50%; border: 2px solid rgba(232,195,126,0.25); border-top-color: #e8c37e; animation: spin 0.9s linear infinite; }
+		@keyframes spin { to { transform: rotate(360deg); } }
+	</style>
+</head>
+<body>
+	<div id="app"></div>
+	<div id="boot"><div><div class="halo"></div>Mi Lectura Diaria…</div></div>
+
+	<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/vue3-sfc-loader/dist/vue3-sfc-loader.js"></script>
+	<script src="app/main.js"></script>
+</body>
+</html>

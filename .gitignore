@@ -1,0 +1,19 @@
+# Build artifacts
+backend/dist/
+backend/*.exe
+backend/*.c
+*.tmp
+
+# V
+*.o
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Legacy PHP site kept for reference (archived, not deployed)
+# (tracked — see legacy/ — but its build junk isn't)
+legacy/**/archive/
+
+# V build def artifacts
+*.def
