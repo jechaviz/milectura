@@ -30,6 +30,25 @@ function comp(name) {
 }
 window.mlComp = comp;
 
+// Spiritual reading status (WhatsApp-style ticks) + highlight palette, shared by
+// VerseBlock and VerseTools. Progression: leído -> comprendido -> memorizado ->
+// aplicado (en oración / vida práctica).
+window.mlStatus = [
+	null,
+	{ s: 1, label: 'Leído', tick: '✓', color: '#c9d3e6', icon: '👁' },
+	{ s: 2, label: 'Comprendido', tick: '✓✓', color: '#7fb0e8', icon: '💡' },
+	{ s: 3, label: 'Memorizado', tick: '✓✓', color: '#e8c37e', icon: '🧠' },
+	{ s: 4, label: 'Aplicado', tick: '✓✓', color: '#8fd39a', icon: '🌱' },
+];
+window.mlHl = [
+	{ key: 'gold', bg: 'rgba(232,195,126,.30)' },
+	{ key: 'sky', bg: 'rgba(127,176,232,.30)' },
+	{ key: 'green', bg: 'rgba(143,211,154,.26)' },
+	{ key: 'rose', bg: 'rgba(232,150,150,.28)' },
+	{ key: 'violet', bg: 'rgba(184,150,232,.28)' },
+];
+window.mlHlBg = (key) => (window.mlHl.find((h) => h.key === key) || {}).bg || '';
+
 // ---- API client -----------------------------------------------------------
 // In dev the V server serves both API and static on :8091 → base ''.
 // On Spaceship the SPA lives at /milectura and the API at /milectura/api.
@@ -69,6 +88,14 @@ const store = Vue.reactive({
 	// set, and 🧠 hides/reveals everything at once.
 	memAll: localStorage.getItem('ml_memall') === '1',
 	favorites: JSON.parse(localStorage.getItem('ml_favs') || '[]'),
+	// Per-verse annotations: { "<version>:<book>:<chapter>:<verse>": {s, hl, note} }
+	//   s  = spiritual status 1..4 (leído/comprendido/memorizado/aplicado)
+	//   hl = highlight color key
+	//   note = free text
+	vdata: JSON.parse(localStorage.getItem('ml_vdata') || '{}'),
+	// currently open verse-tools target (drives the tools drawer in AppShell)
+	toolsKey: '',
+	toolsRef: '',
 	date: todayISO(),
 	setVersion(v) { this.version = v; localStorage.setItem('ml_version', v); },
 	setFont(v) { this.fontScale = Math.min(1.8, Math.max(0.8, v)); localStorage.setItem('ml_font', this.fontScale); },
@@ -84,6 +111,19 @@ const store = Vue.reactive({
 		localStorage.setItem('ml_favs', JSON.stringify(this.favorites.slice(0, 200)));
 	},
 	isFav(ref) { return this.favorites.some((f) => f.ref === ref); },
+	// ---- per-verse annotations -------------------------------------------
+	vKey(book, chapter, verse) { return `${this.version}:${book}:${chapter}:${verse}`; },
+	getV(key) { return this.vdata[key] || {}; },
+	setV(key, patch) {
+		const cur = this.vdata[key] || {};
+		const next = { ...cur, ...patch };
+		if (!next.s && !next.hl && !next.note) delete this.vdata[key];
+		else this.vdata[key] = next;
+		this.vdata = { ...this.vdata };
+		localStorage.setItem('ml_vdata', JSON.stringify(this.vdata));
+	},
+	openTools(key, ref) { this.toolsKey = key; this.toolsRef = ref; },
+	closeTools() { this.toolsKey = ''; this.toolsRef = ''; },
 });
 
 const app = Vue.createApp({

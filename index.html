@@ -76,7 +76,15 @@
 		.verse e, .verse .e { font-style: italic; color: #cbd6ea; }
 		.verse i { font-style: italic; }
 		.verse t, .verse .t { display: inline; }
-		.verse J, .verse .J { color: #f0b8b0; }
+		/* Palabras de Jesús (módulos con <J>, p.ej. NTV) — coral de la paleta */
+		.verse J, .verse .J { color: #ef9a8f; }
+		/* Número de versículo + estado de lectura apilado debajo (tipo WhatsApp) */
+		.vnum-wrap { display: inline-flex; flex-direction: column; align-items: center; vertical-align: text-top; line-height: 1; margin-right: 2px; cursor: pointer; user-select: none; }
+		.vnum-wrap .vnum { font-size: 0.6em; color: rgba(232,195,126,0.75); }
+		.vnum-wrap .vtick { font-size: 0.5em; letter-spacing: -0.12em; margin-top: 1px; line-height: 1; }
+		.vnum-wrap:hover .vnum { color: #e8c37e; }
+		.vhl { border-radius: 4px; padding: 0 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+		.vnote-flag { font-size: 0.62em; margin: 0 2px; cursor: pointer; opacity: 0.75; vertical-align: super; }
 		::selection { background: rgba(232,195,126,0.35); }
 		/* Difuminado por PALABRA con revelado GRADUAL: mientras el puntero permanece
 		   sobre una palabra se le añade .dwell y su nitidez aumenta poco a poco

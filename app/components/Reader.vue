@@ -32,7 +32,7 @@
 					<div class="flex-1"></div>
 					<button class="chip" @click="toggleCommentary">{{ showComm ? 'Ocultar notas' : '✦ Notas' }}</button>
 				</div>
-				<VerseBlock :verses="data.verses" :subheadings="data.subheadings" class="font-serif text-[1.15em] lg:text-[1.2em] leading-relaxed text-white/90 max-w-[46rem]" />
+				<VerseBlock :verses="data.verses" :subheadings="data.subheadings" :book="data.book" :chapter="data.chapter" :refLabel="data.bookName + ' ' + data.chapter" class="font-serif text-[1.15em] lg:text-[1.2em] leading-relaxed text-white/90 max-w-[46rem]" />
 
 				<!-- Commentary -->
 				<div v-if="showComm" class="mt-8 pt-6 border-t border-white/10">

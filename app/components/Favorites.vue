@@ -20,7 +20,7 @@
 					<div class="flex-1"></div>
 					<button class="text-white/40 hover:text-red-300 transition" @click="store.toggleFav(f)">✕</button>
 				</div>
-				<VerseBlock :verses="f.verses" class="font-serif text-white/85 flex-1" />
+				<VerseBlock :verses="f.verses" :book="f.book||0" :chapter="f.chapter||0" :refLabel="(f.ref||'').split(':')[0]" class="font-serif text-white/85 flex-1" />
 				<button class="chip mt-3 self-start" @click="copy(f)">↗ Copiar</button>
 			</div>
 		</div>

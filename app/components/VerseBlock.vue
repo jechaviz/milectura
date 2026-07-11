@@ -14,8 +14,13 @@
 		</div>
 		<template v-for="v in display" :key="v.v">
 			<div v-if="subheadings && subheadings[v.v]"
-				class="font-serif text-gold-soft/90 text-[1.05em] mt-4 mb-1">{{ subheadings[v.v] }}</div>
-			<span class="align-super text-[0.6em] text-gold/70 mr-1 select-none">{{ v.v }}</span><span v-html="v.t"></span>{{ ' ' }}
+				class="font-serif text-gold-soft/90 text-[1.05em] mt-4 mb-1">{{ subheadings[v.v] }}</div><span
+				v-if="canAnnotate" class="vnum-wrap" @click.stop="openTools(v.v)" @pointerdown.stop @pointerup.stop
+				:title="'Marcar / resaltar / nota'"><span class="vnum">{{ v.v }}</span><span
+				v-if="statusOf(v.v)" class="vtick" :style="{ color: statusOf(v.v).color }">{{ statusOf(v.v).tick }}</span></span><span
+				v-else class="align-super text-[0.6em] text-gold/70 mr-1 select-none">{{ v.v }}</span> <span
+				v-html="v.t" :class="{ vhl: !!hlOf(v.v) }" :style="hlOf(v.v) ? { background: hlOf(v.v) } : {}"></span><span
+				v-if="hasNote(v.v)" class="vnote-flag" @click.stop="openTools(v.v)" @pointerdown.stop title="Nota">🗒</span>{{ ' ' }}
 		</template>
 	</div>
 </template>
@@ -30,6 +35,10 @@ module.exports = {
 		forceStage: { type: String, default: '' },
 		// never memorize (plain display) regardless of the global state
 		plain: { type: Boolean, default: false },
+		// verse-annotation context (status / highlight / notes). Disabled if absent.
+		book: { type: Number, default: 0 },
+		chapter: { type: Number, default: 0 },
+		refLabel: { type: String, default: '' },
 	},
 	data() { return { active: false }; },
 	computed: {
@@ -44,6 +53,7 @@ module.exports = {
 		},
 		activeStage() { return this.forceStage ? this.forceStage : (this.hidden ? this.form : 'normal'); },
 		interactive() { return !this.forceStage && !this.plain; },
+		canAnnotate() { return !!this.store && this.book > 0 && this.chapter > 0; },
 		// The form select shows only once a passage is memorized (clean reading).
 		showBadge() { return this.interactive && this.hidden; },
 		hint() {
@@ -62,6 +72,16 @@ module.exports = {
 		memAll() { this.active = false; }, // reset local taps when the global flips
 	},
 	methods: {
+		// ---- per-verse annotations -------------------------------------------
+		vkey(v) { return this.store ? this.store.vKey(this.book, this.chapter, v) : ''; },
+		statusOf(v) { const d = this.store ? this.store.getV(this.vkey(v)) : {}; return d.s ? window.mlStatus[d.s] : null; },
+		hlOf(v) { const d = this.store ? this.store.getV(this.vkey(v)) : {}; return d.hl ? window.mlHlBg(d.hl) : ''; },
+		hasNote(v) { const d = this.store ? this.store.getV(this.vkey(v)) : {}; return !!d.note; },
+		openTools(v) {
+			if (!this.canAnnotate || !this.store) return;
+			const label = this.refLabel ? `${this.refLabel}:${v}` : `v. ${v}`;
+			this.store.openTools(this.vkey(v), label);
+		},
 		onDown(e) {
 			this._downAt = (typeof performance !== 'undefined') ? performance.now() : 0;
 			this.onPointer(e);

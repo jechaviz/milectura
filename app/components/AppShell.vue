@@ -63,6 +63,9 @@
 		<Drawer :open="fav" title="Guardado en mi corazón" side="right" @close="fav = false">
 			<Favorites embedded @open="fav = false" />
 		</Drawer>
+		<Drawer :open="!!store.toolsKey" :title="store.toolsRef || 'Versículo'" side="bottom" @close="store.closeTools()">
+			<VerseTools />
+		</Drawer>
 	</div>
 </template>
 
@@ -73,6 +76,7 @@ module.exports = {
 		Drawer: window.mlComp('Drawer'),
 		MemPanel: window.mlComp('MemPanel'),
 		Favorites: window.mlComp('Favorites'),
+		VerseTools: window.mlComp('VerseTools'),
 	},
 	data() {
 		return {
