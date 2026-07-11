@@ -29,8 +29,8 @@
 						</button>
 					</div>
 					<p class="text-white/85 verse" :class="{ blurred: store.memMode === 'blur' }" v-html="displayT(r.t)"
-						@click="revealWord" @pointerdown="onPointer" @pointermove="onPointer"
-						@pointerup="clearReveal" @pointercancel="clearReveal" @pointerleave="clearReveal"></p>
+						@pointerdown="onPointer" @pointermove="onPointer"
+						@pointerup="clearDwell" @pointercancel="clearDwell" @pointerleave="clearDwell"></p>
 				</div>
 			</div>
 		</section>
@@ -66,21 +66,17 @@ module.exports = {
 			if (m === 'blur' && window.mlMem) return window.mlMem.blurWords(t); // per-word blur
 			return this.highlight(t);
 		},
-		revealWord(e) {
-			if (this.store.memMode !== 'blur') return;
-			const w = e.target && e.target.closest && e.target.closest('.mw');
-			if (w) w.classList.toggle('reveal');
-		},
 		onPointer(e) {
-			if (this.store.memMode !== 'blur' || e.pointerType === 'mouse') return;
+			if (this.store.memMode !== 'blur') return;
 			const el = document.elementFromPoint(e.clientX, e.clientY);
-			const w = el && el.closest && el.closest('.mw');
-			if (this._lastMw && this._lastMw !== w) this._lastMw.classList.remove('reveal');
-			if (w) { w.classList.add('reveal'); this._lastMw = w; }
+			const w = el && el.closest ? el.closest('.mw') : null;
+			if (w === this._dwellMw) return;
+			if (this._dwellMw) this._dwellMw.classList.remove('dwell');
+			if (w) w.classList.add('dwell');
+			this._dwellMw = w || null;
 		},
-		clearReveal(e) {
-			if (e && e.pointerType === 'mouse') return;
-			if (this._lastMw) { this._lastMw.classList.remove('reveal'); this._lastMw = null; }
+		clearDwell() {
+			if (this._dwellMw) { this._dwellMw.classList.remove('dwell'); this._dwellMw = null; }
 		},
 		highlight(t) {
 			if (!this.lastQ) return t;

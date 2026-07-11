@@ -78,10 +78,12 @@
 		.verse t, .verse .t { display: inline; }
 		.verse J, .verse .J { color: #f0b8b0; }
 		::selection { background: rgba(232,195,126,0.35); }
-		/* Difuminado por PALABRA: cada palabra se revela sola al hover (ratón) o al
-		   tocarla/tap (táctil vía .reveal). Compartido por VerseBlock y Buscar. */
-		.verse.blurred .mw { filter: blur(4.5px); transition: filter .12s ease; cursor: pointer; -webkit-user-select: none; user-select: none; }
-		.verse.blurred .mw:hover, .verse.blurred .mw.reveal { filter: none; -webkit-user-select: auto; user-select: auto; }
+		/* Difuminado por PALABRA con revelado GRADUAL: mientras el puntero permanece
+		   sobre una palabra se le añade .dwell y su nitidez aumenta poco a poco
+		   (transición larga); al salir, .dwell se retira y vuelve a difuminarse.
+		   Compartido por VerseBlock y Buscar (ratón vía pointer, táctil vía JS). */
+		.verse.blurred .mw { filter: blur(4.5px); transition: filter .6s ease; cursor: pointer; -webkit-user-select: none; user-select: none; touch-action: pan-y; }
+		.verse.blurred .mw.dwell { filter: blur(0); transition: filter 1.8s ease-out; }
 		/* thin scrollbar */
 		*::-webkit-scrollbar { width: 8px; height: 8px; }
 		*::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 8px; }

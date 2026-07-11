@@ -1,7 +1,7 @@
 <template>
 	<div class="verse leading-relaxed" :class="{ 'mem-on': clickable, blurred: activeStage === 'blur' }"
 		@click="onClick" @pointerdown="onPointer" @pointermove="onPointer"
-		@pointerup="clearReveal" @pointercancel="clearReveal" @pointerleave="clearReveal">
+		@pointerup="clearDwell" @pointercancel="clearDwell" @pointerleave="clearDwell">
 		<div v-if="showBadge" class="mem-badge select-none flex items-center gap-2 mb-2 text-xs">
 			<span class="px-2 py-0.5 rounded-full glass-soft text-gold-soft">{{ stageInfo.label }}</span>
 			<span class="text-white/40">{{ clickable ? stageInfo.hint : '' }}</span>
@@ -58,35 +58,28 @@ module.exports = {
 		gmode(m) { if (m !== 'libre') this.stage = 'normal'; },
 	},
 	methods: {
-		onClick(e) {
-			// In blur mode a tap toggles the tapped word (persistent reveal); it
-			// must not also cycle stages.
-			if (this.activeStage === 'blur') {
-				const w = e.target && e.target.closest && e.target.closest('.mw');
-				if (w) w.classList.toggle('reveal');
-				return;
-			}
-			if (!this.clickable) return;
+		onClick() {
+			// In blur mode, revealing is handled by dwell (pointer hold), not click.
+			if (this.activeStage === 'blur' || !this.clickable) return;
 			const enabled = this.store ? this.store.memStages : null;
 			this.stage = window.mlMem ? window.mlMem.nextStage(this.stage, enabled) : 'normal';
 		},
-		// Touch drag: reveal the word under the finger (mouse uses CSS :hover). Only
-		// the word currently under the pointer is cleared, like scratching it off.
+		// GRADUAL reveal: while the pointer stays over a word it carries .dwell and
+		// its blur eases to 0 over ~1.8s; moving off (or lifting) drops .dwell and it
+		// re-blurs. Works for mouse (pointermove hover) and touch (drag over words).
 		onPointer(e) {
-			if (this.activeStage !== 'blur' || e.pointerType === 'mouse') return;
+			if (this.activeStage !== 'blur') return;
 			const el = document.elementFromPoint(e.clientX, e.clientY);
-			const w = el && el.closest && el.closest('.mw');
-			if (this._lastMw && this._lastMw !== w) this._lastMw.classList.remove('reveal');
-			if (w) {
-				w.classList.add('reveal');
-				this._lastMw = w;
-			}
+			const w = el && el.closest ? el.closest('.mw') : null;
+			if (w === this._dwellMw) return;
+			if (this._dwellMw) this._dwellMw.classList.remove('dwell');
+			if (w) w.classList.add('dwell');
+			this._dwellMw = w || null;
 		},
-		clearReveal(e) {
-			if (e && e.pointerType === 'mouse') return;
-			if (this._lastMw) {
-				this._lastMw.classList.remove('reveal');
-				this._lastMw = null;
+		clearDwell() {
+			if (this._dwellMw) {
+				this._dwellMw.classList.remove('dwell');
+				this._dwellMw = null;
 			}
 		},
 	},
