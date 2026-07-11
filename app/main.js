@@ -66,7 +66,7 @@ const store = Vue.reactive({
 	// memorized only when tapped/clicked (per-verse). 'libre' cycles per verse.
 	//   'off' | 'libre' | 'initials' | 'hidden' | 'blur'
 	memMode: localStorage.getItem('ml_memmode') || 'off',
-	memLastForm: localStorage.getItem('ml_memlast') || 'hidden',
+	memLastForm: localStorage.getItem('ml_memlast') || 'blur', // forma por defecto: difuminado
 	// which memorization forms the click-cycle steps through (user-selectable).
 	memStages: JSON.parse(localStorage.getItem('ml_memstages') || '["initials","hidden","blur"]'),
 	favorites: JSON.parse(localStorage.getItem('ml_favs') || '[]'),
@@ -79,7 +79,7 @@ const store = Vue.reactive({
 		this.memMode = m; localStorage.setItem('ml_memmode', m);
 	},
 	// quick toggle: memorization on (last form) <-> reading only ('off')
-	toggleMem() { this.setMemMode(this.memMode === 'off' ? (this.memLastForm || 'hidden') : 'off'); },
+	toggleMem() { this.setMemMode(this.memMode === 'off' ? (this.memLastForm || 'blur') : 'off'); },
 	toggleMemStage(key) {
 		const i = this.memStages.indexOf(key);
 		if (i >= 0) { if (this.memStages.length > 1) this.memStages.splice(i, 1); }
