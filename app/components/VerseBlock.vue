@@ -17,7 +17,7 @@
 				class="font-serif text-gold-soft/90 text-[1.05em] mt-4 mb-1">{{ subheadings[v.v] }}</div><span
 				v-if="canAnnotate" class="vnum-wrap" @click.stop="openTools(v.v)" @pointerdown.stop @pointerup.stop
 				:title="'Marcar / resaltar / nota'"><span class="vnum">{{ v.v }}</span><span
-				v-if="statusOf(v.v)" class="vtick" :style="{ color: statusOf(v.v).color }">{{ statusOf(v.v).tick }}</span></span><span
+				v-if="statusOf(v.v)" class="vbadge" :style="{ borderColor: statusOf(v.v).color, background: statusOf(v.v).color + '26' }" :title="statusOf(v.v).label">{{ statusOf(v.v).icon }}</span></span><span
 				v-else class="align-super text-[0.6em] text-gold/70 mr-1 select-none">{{ v.v }}</span> <span
 				v-html="v.t" :class="{ vhl: !!hlOf(v.v) }" :style="hlOf(v.v) ? { background: hlOf(v.v) } : {}"></span><span
 				v-if="hasNote(v.v)" class="vnote-flag" @click.stop="openTools(v.v)" @pointerdown.stop title="Nota">🗒</span>{{ ' ' }}

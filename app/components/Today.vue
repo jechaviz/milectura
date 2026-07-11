@@ -28,8 +28,14 @@
 					<h2 class="font-serif text-xl text-gold-soft whitespace-nowrap">Lectura del día</h2>
 					<span class="text-white/40 text-sm whitespace-nowrap">plan de un año</span>
 				</div>
-				<input type="date" :value="store.date" @change="setDate($event.target.value)"
-					class="glass-soft rounded-full px-3 py-1 text-sm outline-none shrink-0" />
+				<div class="flex items-center gap-1 shrink-0">
+					<button @click="stepDate(-1)" title="Lectura anterior" class="w-8 h-8 rounded-full glass-soft hover:bg-white/15 leading-none">‹</button>
+					<input type="date" :value="store.date" @change="setDate($event.target.value)"
+						class="glass-soft rounded-full px-3 py-1 text-sm outline-none" />
+					<button @click="stepDate(1)" title="Lectura siguiente" class="w-8 h-8 rounded-full glass-soft hover:bg-white/15 leading-none">›</button>
+					<button v-if="store.date !== todayISO()" @click="store.date = todayISO()" title="Hoy"
+						class="ml-1 chip !py-1">Hoy</button>
+				</div>
 			</div>
 
 			<div v-if="planErr" class="text-white/60">{{ planErr }}</div>
@@ -64,7 +70,7 @@
 
 <script>
 module.exports = {
-	inject: ['api', 'store', 'comp'],
+	inject: ['api', 'store', 'comp', 'todayISO'],
 	components: { VerseBlock: window.mlComp('VerseBlock') },
 	data() {
 		return { votd: null, err: '', plan: null, planErr: '', devoHtml: '', devoName: '', devoErr: '', heroImgs: [
@@ -97,7 +103,12 @@ module.exports = {
 				return new Date(iso + 'T00:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
 			} catch { return iso; }
 		},
-		setDate(v) { this.store.date = v; },
+		setDate(v) { if (v) this.store.date = v; },
+		stepDate(delta) {
+			const d = new Date(this.store.date + 'T00:00:00');
+			d.setDate(d.getDate() + delta);
+			this.store.date = this.todayISO(d);
+		},
 		async load() {
 			this.votd = null; this.err = ''; this.plan = null; this.planErr = '';
 			const v = this.store.version, d = this.store.date;
