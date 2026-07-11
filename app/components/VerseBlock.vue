@@ -2,8 +2,15 @@
 	<div class="verse leading-relaxed" :class="{ 'mem-on': interactive, blurred: activeStage === 'blur' }"
 		@click="onClick" @pointerdown="onDown" @pointermove="onPointer"
 		@pointerup="clearDwell" @pointercancel="clearDwell" @pointerleave="clearDwell">
-		<div v-if="showBadge" class="mem-badge select-none flex items-center gap-2 mb-2 text-xs">
-			<span class="px-2 py-0.5 rounded-full glass-soft text-gold-soft">{{ badge.label }}</span>
+		<div v-if="showBadge" class="mem-badge select-none flex items-center gap-2 mb-2 text-xs" @click.stop>
+			<span v-if="gmode === 'libre'" class="px-2 py-0.5 rounded-full glass-soft text-gold-soft">{{ badge.label }}</span>
+			<select v-else :value="gmode" @change="store && store.setMemMode($event.target.value)"
+				@click.stop @pointerdown.stop
+				class="glass-soft rounded-full px-2.5 py-0.5 text-gold-soft outline-none cursor-pointer">
+				<option value="initials" class="text-ink">Iniciales</option>
+				<option value="hidden" class="text-ink">Oculto</option>
+				<option value="blur" class="text-ink">Difuminado</option>
+			</select>
 			<span class="text-white/40">{{ badge.hint }}</span>
 		</div>
 		<template v-for="v in display" :key="v.v">
