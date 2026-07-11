@@ -45,7 +45,7 @@
 			</div>
 
 			<div class="flex-1 flex items-center">
-				<VerseBlock :key="current.ref" :verses="current.verses"
+				<VerseBlock :key="current.ref + deckStage" :verses="current.verses" :forceStage="deckStage"
 					class="font-serif text-2xl sm:text-3xl leading-relaxed text-white w-full" />
 			</div>
 
@@ -98,6 +98,12 @@ module.exports = {
 	computed: {
 		current() { return this.deck[this.idx] || { ref: '', verses: [] }; },
 		enabledStages() { return this.allStages.filter((s) => this.store.memStages.includes(s.key)); },
+		// the deck card always shows the chosen form (hidden by default to practice);
+		// '' when off/libre so it reads normally or cycles on tap.
+		deckStage() {
+			const m = this.store.memMode;
+			return (m === 'initials' || m === 'hidden' || m === 'blur') ? m : '';
+		},
 	},
 	watch: {
 		'store.version'() { this.load(); },

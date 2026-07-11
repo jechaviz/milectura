@@ -30,9 +30,10 @@
 					class="relative w-9 h-9 rounded-full glass-soft leading-none text-white/70 hover:text-white transition shrink-0">
 					❤<span v-if="store.favorites.length" class="absolute -top-1 -right-1 text-[0.6rem] bg-gold text-ink-900 rounded-full min-w-[1rem] h-4 px-1 grid place-items-center font-semibold">{{ store.favorites.length }}</span>
 				</button>
-				<button @click="mem = true" title="Modo memorización"
+				<button @pointerdown="brainDown" @pointerup="brainUp" @pointerleave="brainUp" @click="brainClick"
+					title="Tap: memorizar / solo lectura · Mantén: opciones"
 					class="w-9 h-9 rounded-full glass-soft leading-none transition shrink-0"
-					:class="store.memMode !== 'off' || store.forgetica ? 'text-gold-soft bg-white/15 ring-1 ring-gold/40' : 'text-white/70 hover:text-white'">🧠</button>
+					:class="store.memMode !== 'off' ? 'text-gold-soft bg-white/15 ring-1 ring-gold/40' : 'text-white/70 hover:text-white'">🧠</button>
 			</div>
 		</header>
 
@@ -102,6 +103,10 @@ module.exports = {
 	methods: {
 		isActive(hash) { return this.base === hash || (hash === '/biblia' && this.base === '/leer'); },
 		onHash() { this.route = location.hash || '#/hoy'; this.mem = false; this.fav = false; window.scrollTo({ top: 0, behavior: 'smooth' }); },
+		// 🧠: short tap toggles memorize/reading; long-press opens the options drawer.
+		brainDown() { this._long = false; this._t = setTimeout(() => { this._long = true; this.mem = true; }, 420); },
+		brainUp() { clearTimeout(this._t); },
+		brainClick() { if (this._long) { this._long = false; return; } this.store.toggleMem(); },
 	},
 	mounted() {
 		window.addEventListener('hashchange', this.onHash);

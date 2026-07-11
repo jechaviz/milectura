@@ -1,11 +1,10 @@
 <template>
-	<div class="verse leading-relaxed" :class="{ 'mem-on': clickable, blurred: activeStage === 'blur' }"
-		@click="onClick" @pointerdown="onPointer" @pointermove="onPointer"
+	<div class="verse leading-relaxed" :class="{ 'mem-on': interactive, blurred: activeStage === 'blur' }"
+		@click="onClick" @pointerdown="onDown" @pointermove="onPointer"
 		@pointerup="clearDwell" @pointercancel="clearDwell" @pointerleave="clearDwell">
 		<div v-if="showBadge" class="mem-badge select-none flex items-center gap-2 mb-2 text-xs">
-			<span class="px-2 py-0.5 rounded-full glass-soft text-gold-soft">{{ stageInfo.label }}</span>
-			<span class="text-white/40">{{ clickable ? stageInfo.hint : '' }}</span>
-			<span v-if="clickable && activeStage !== 'normal'" class="text-white/30">· toca para siguiente</span>
+			<span class="px-2 py-0.5 rounded-full glass-soft text-gold-soft">{{ badge.label }}</span>
+			<span class="text-white/40">{{ badge.hint }}</span>
 		</div>
 		<template v-for="v in display" :key="v.v">
 			<div v-if="subheadings && subheadings[v.v]"
@@ -21,52 +20,65 @@ module.exports = {
 	props: {
 		verses: { type: Array, default: () => [] },
 		subheadings: { type: Object, default: () => ({}) },
-		// externally-controlled stage (the Memorizar deck drives its card directly)
+		// externally-controlled stage (the Memorizar deck forces its card hidden)
 		forceStage: { type: String, default: '' },
-		// when true, ignore the global mode and never memorize (plain display)
+		// never memorize (plain display) regardless of the global mode
 		plain: { type: Boolean, default: false },
 	},
-	data() { return { stage: 'normal' }; },
+	data() { return { stage: 'normal', active: false }; },
 	computed: {
 		gmode() { return this.plain ? 'off' : (this.store ? this.store.memMode : 'off'); },
-		// resolved stage to render: forceStage wins, else the global mode drives it;
-		// in 'libre' the per-block internal stage cycles on click.
+		isForm() { return this.gmode === 'initials' || this.gmode === 'hidden' || this.gmode === 'blur'; },
+		// resolved stage to render for THIS verse block:
 		activeStage() {
 			if (this.forceStage) return this.forceStage;
-			const m = this.gmode;
-			if (m === 'off') return 'normal';
-			if (m === 'libre') return this.stage;
-			return m; // 'initials' | 'hidden' | 'blur'
+			if (this.gmode === 'off') return 'normal';
+			if (this.gmode === 'libre') return this.stage;
+			// form mode: normal until this verse is tapped to memorize it
+			return this.active ? this.gmode : 'normal';
 		},
-		clickable() { return !this.forceStage && this.gmode === 'libre'; },
-		showBadge() { return !this.forceStage && this.gmode !== 'off'; },
-		stageInfo() {
-			const S = (window.mlMem && window.mlMem.STAGES) || [];
-			return S.find((s) => s.key === this.activeStage) || { label: '', hint: '' };
+		interactive() { return !this.forceStage && this.gmode !== 'off'; },
+		showBadge() { return this.interactive; },
+		badge() {
+			if (this.gmode === 'libre') {
+				const s = window.mlMem ? window.mlMem.stageInfo(this.stage) : { label: '', hint: '' };
+				return { label: s.label, hint: this.stage === 'normal' ? 'Toca para esconder' : 'Toca para la siguiente forma' };
+			}
+			if (!this.active) return { label: 'Lectura', hint: 'Toca el versículo para memorizarlo' };
+			if (this.gmode === 'blur') return { label: 'Difuminado', hint: 'Mantén sobre una palabra para revelarla · toca para leer' };
+			const s = window.mlMem ? window.mlMem.stageInfo(this.gmode) : { label: '', hint: '' };
+			return { label: s.label, hint: 'Toca para leer' };
 		},
 		display() {
 			const mem = window.mlMem;
-			if (!mem || this.activeStage === 'normal') return this.verses;
-			if (this.activeStage === 'blur') {
-				return this.verses.map((v) => ({ v: v.v, t: mem.blurWords(v.t) }));
-			}
-			return this.verses.map((v) => ({ v: v.v, t: mem.apply(v.t, this.activeStage) }));
+			const st = this.activeStage;
+			if (!mem || st === 'normal') return this.verses;
+			if (st === 'blur') return this.verses.map((v) => ({ v: v.v, t: mem.blurWords(v.t) }));
+			return this.verses.map((v) => ({ v: v.v, t: mem.apply(v.t, st) }));
 		},
 	},
 	watch: {
-		// when the global mode leaves 'libre', reset the per-block cursor
-		gmode(m) { if (m !== 'libre') this.stage = 'normal'; },
+		gmode() { this.stage = 'normal'; this.active = false; },
 	},
 	methods: {
-		onClick() {
-			// In blur mode, revealing is handled by dwell (pointer hold), not click.
-			if (this.activeStage === 'blur' || !this.clickable) return;
-			const enabled = this.store ? this.store.memStages : null;
-			this.stage = window.mlMem ? window.mlMem.nextStage(this.stage, enabled) : 'normal';
+		onDown(e) {
+			this._downAt = (typeof performance !== 'undefined') ? performance.now() : 0;
+			this.onPointer(e);
 		},
-		// GRADUAL reveal: while the pointer stays over a word it carries .dwell and
-		// its blur eases to 0 over ~1.8s; moving off (or lifting) drops .dwell and it
-		// re-blurs. Works for mouse (pointermove hover) and touch (drag over words).
+		onClick() {
+			if (this.forceStage || this.gmode === 'off') return;
+			if (this.gmode === 'libre') {
+				const enabled = this.store ? this.store.memStages : null;
+				this.stage = window.mlMem ? window.mlMem.nextStage(this.stage, enabled) : 'normal';
+				return;
+			}
+			// form mode: a quick tap toggles THIS verse. A hold (used to reveal words
+			// in blur) must not toggle — distinguish by press duration.
+			const held = ((typeof performance !== 'undefined') ? performance.now() : 0) - (this._downAt || 0);
+			if (this.gmode === 'blur' && this.active && held >= 220) return;
+			this.active = !this.active;
+		},
+		// GRADUAL per-word reveal while the pointer dwells (blur, active verse only).
 		onPointer(e) {
 			if (this.activeStage !== 'blur') return;
 			const el = document.elementFromPoint(e.clientX, e.clientY);
@@ -77,10 +89,7 @@ module.exports = {
 			this._dwellMw = w || null;
 		},
 		clearDwell() {
-			if (this._dwellMw) {
-				this._dwellMw.classList.remove('dwell');
-				this._dwellMw = null;
-			}
+			if (this._dwellMw) { this._dwellMw.classList.remove('dwell'); this._dwellMw = null; }
 		},
 	},
 };
@@ -88,6 +97,5 @@ module.exports = {
 
 <style>
 .mem-on { cursor: pointer; }
-/* per-word blur + reveal lives in the global stylesheet (.verse.blurred .mw),
-   shared by VerseBlock and the search results. */
+/* per-word blur + gradual reveal live in the global stylesheet (.verse.blurred .mw) */
 </style>

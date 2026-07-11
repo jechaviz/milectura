@@ -61,9 +61,12 @@ const store = Vue.reactive({
 	bibles: [],
 	fontScale: Number(localStorage.getItem('ml_font') || 1),
 	forgetica: localStorage.getItem('ml_forgetica') === '1',
-	// GLOBAL memorization mode, applied to every verse in every view:
-	//   'off' | 'libre' (tap to cycle) | 'initials' | 'hidden' | 'blur'
+	// Memorization: memMode is the SELECTED form (or 'off' = reading only). A form
+	// no longer hides every verse at once — verses read normally and each one is
+	// memorized only when tapped/clicked (per-verse). 'libre' cycles per verse.
+	//   'off' | 'libre' | 'initials' | 'hidden' | 'blur'
 	memMode: localStorage.getItem('ml_memmode') || 'off',
+	memLastForm: localStorage.getItem('ml_memlast') || 'hidden',
 	// which memorization forms the click-cycle steps through (user-selectable).
 	memStages: JSON.parse(localStorage.getItem('ml_memstages') || '["initials","hidden","blur"]'),
 	favorites: JSON.parse(localStorage.getItem('ml_favs') || '[]'),
@@ -71,7 +74,12 @@ const store = Vue.reactive({
 	setVersion(v) { this.version = v; localStorage.setItem('ml_version', v); },
 	setFont(v) { this.fontScale = Math.min(1.8, Math.max(0.8, v)); localStorage.setItem('ml_font', this.fontScale); },
 	toggleForgetica() { this.forgetica = !this.forgetica; localStorage.setItem('ml_forgetica', this.forgetica ? '1' : '0'); },
-	setMemMode(m) { this.memMode = m; localStorage.setItem('ml_memmode', m); },
+	setMemMode(m) {
+		if (m !== 'off') { this.memLastForm = m; localStorage.setItem('ml_memlast', m); }
+		this.memMode = m; localStorage.setItem('ml_memmode', m);
+	},
+	// quick toggle: memorization on (last form) <-> reading only ('off')
+	toggleMem() { this.setMemMode(this.memMode === 'off' ? (this.memLastForm || 'hidden') : 'off'); },
 	toggleMemStage(key) {
 		const i = this.memStages.indexOf(key);
 		if (i >= 0) { if (this.memStages.length > 1) this.memStages.splice(i, 1); }

@@ -28,8 +28,9 @@
 							{{ store.isFav(r.ref) ? '❤' : '♡' }}
 						</button>
 					</div>
-					<p class="text-white/85 verse" :class="{ blurred: store.memMode === 'blur' }" v-html="displayT(r.t)"
-						@pointerdown="onPointer" @pointermove="onPointer"
+					<p class="text-white/85 verse" :class="{ blurred: act[i] && store.memMode === 'blur', 'mem-on': store.memMode !== 'off' }"
+						v-html="displayT(r.t, i)" @click="toggleRes(i)"
+						@pointerdown="onDown" @pointermove="onPointer"
 						@pointerup="clearDwell" @pointercancel="clearDwell" @pointerleave="clearDwell"></p>
 				</div>
 			</div>
@@ -44,14 +45,14 @@
 module.exports = {
 	inject: ['api', 'store'],
 	data() {
-		return { q: '', lastQ: '', results: null, more: false, loading: false, err: '',
+		return { q: '', lastQ: '', results: null, more: false, loading: false, err: '', act: {},
 			suggestions: ['amor', 'fe', 'esperanza', 'perdón', 'gozo', 'paz', 'gracia'] };
 	},
 	methods: {
 		async run() {
 			const q = this.q.trim();
 			if (q.length < 3) { this.err = 'Escribe al menos 3 caracteres.'; this.results = null; return; }
-			this.loading = true; this.err = ''; this.results = null;
+			this.loading = true; this.err = ''; this.results = null; this.act = {};
 			try {
 				const r = await this.api.get(`/search?v=${this.store.version}&q=${encodeURIComponent(q)}&limit=60`);
 				this.results = r.results; this.more = r.more; this.lastQ = q;
@@ -60,11 +61,23 @@ module.exports = {
 		},
 		// When a memorization form is active globally, apply it; otherwise keep the
 		// search highlight. (Memorization works in every view, search included.)
-		displayT(t) {
+		// per-result: only the tapped result is memorized (act[i]); others read normal.
+		displayT(t, i) {
 			const m = this.store.memMode;
-			if ((m === 'initials' || m === 'hidden') && window.mlMem) return window.mlMem.apply(t, m);
-			if (m === 'blur' && window.mlMem) return window.mlMem.blurWords(t); // per-word blur
-			return this.highlight(t);
+			if (!this.act[i] || m === 'off' || m === 'libre' || !window.mlMem) return this.highlight(t);
+			if (m === 'blur') return window.mlMem.blurWords(t);
+			return window.mlMem.apply(t, m);
+		},
+		onDown(e) {
+			this._downAt = (typeof performance !== 'undefined') ? performance.now() : 0;
+			this.onPointer(e);
+		},
+		toggleRes(i) {
+			const m = this.store.memMode;
+			if (m === 'off' || m === 'libre') return;
+			const held = ((typeof performance !== 'undefined') ? performance.now() : 0) - (this._downAt || 0);
+			if (m === 'blur' && this.act[i] && held >= 220) return; // hold = reveal words
+			this.act = { ...this.act, [i]: !this.act[i] };
 		},
 		onPointer(e) {
 			if (this.store.memMode !== 'blur') return;

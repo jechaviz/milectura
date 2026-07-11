@@ -1,8 +1,9 @@
 <template>
 	<div class="space-y-5 text-sm">
 		<p class="text-white/60 leading-relaxed">
-			Elige cómo se esconde el texto. El modo se aplica a <b class="text-white/85">todos los versículos</b>
-			en cualquier vista (Hoy, Biblia, Buscar, Guardados…).
+			Elige cómo se esconde el texto. Lees normal y <b class="text-white/85">tocas un versículo
+			para memorizarlo</b> (solo ese). Toca de nuevo para leerlo. Atajo: toca 🧠 para
+			alternar memorizar / solo lectura.
 		</p>
 
 		<!-- Global mode -->
